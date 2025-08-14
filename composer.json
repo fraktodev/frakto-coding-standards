@@ -1,0 +1,38 @@
+{
+	"name": "frakto/lint",
+	"description": "Dependencies for format files",
+	"type": "project",
+	"license": "MIT",
+	"minimum-stability": "dev",
+	"prefer-stable": true,
+	"authors": [
+		{
+			"name": "Frakto Team",
+			"email": "hello@frakto.dev"
+		}
+	],
+	"repositories": [
+		{
+			"type": "path",
+			"url": "./packages/php-coding",
+			"options": {
+				"symlink": true
+			}
+		}
+	],
+	"require-dev": {
+		"squizlabs/php_codesniffer": "^3.10",
+		"phpcsstandards/phpcsutils": "^1.1",
+		"phpcsstandards/phpcsextra": "^1.2",
+		"phpcompatibility/php-compatibility": "^9.3",
+		"phpcompatibility/phpcompatibility-wp": "^2.1",
+		"wp-coding-standards/wpcs": "^3.0",
+		"frakto/php-coding-standards": "*",
+		"dealerdirect/phpcodesniffer-composer-installer": "^1.0"
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		}
+	}
+}

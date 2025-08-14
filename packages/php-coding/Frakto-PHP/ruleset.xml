@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<ruleset name="Frakto-PHP"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="https://schema.phpcodesniffer.com/phpcs.xsd">
+
+	<description>Frakto PHP Coding Standards</description>
+
+	<!-- #### Frakto standards #### -->
+	<rule ref="Frakto-WP">
+		<!-- Allow usage of backtick operator for shell execution -->
+		<exclude name="Generic.PHP.BacktickOperator" />
+		<!-- Allow usage of PHP functions that WordPress normally restricts -->
+		<exclude name="WordPress.PHP.RestrictedPHPFunctions" />
+		<!-- Allow usage of development-only functions in production code -->
+		<exclude name="WordPress.PHP.DevelopmentFunctions" />
+		<!-- Allow discouraged PHP functions without triggering errors -->
+		<exclude name="WordPress.PHP.DiscouragedPHPFunctions" />
+		<!-- Allow usage of ini_set() to modify PHP configuration at runtime -->
+		<exclude name="WordPress.PHP.IniSet" />
+
+		<!-- Allow usage of restricted PHP date/time functions in WordPress -->
+		<exclude name="WordPress.DateTime.RestrictedFunctions" />
+		<!-- Allow usage of current_time() with 'timestamp' return type -->
+		<exclude name="WordPress.DateTime.CurrentTimeTimestamp" />
+
+		<!-- Allow usage of deprecated WordPress functions -->
+		<exclude name="WordPress.WP.DeprecatedFunctions" />
+		<!-- Allow usage of deprecated WordPress classes -->
+		<exclude name="WordPress.WP.DeprecatedClasses" />
+		<!-- Allow usage of deprecated WordPress function parameters -->
+		<exclude name="WordPress.WP.DeprecatedParameters" />
+		<!-- Allow usage of deprecated WordPress parameter values -->
+		<exclude name="WordPress.WP.DeprecatedParameterValues" />
+		<!-- Allow usage of classical functions -->
+		<exclude name="WordPress.WP.AlternativeFunctions" />
+		<!-- Allow usage of constants that are normally discouraged in WordPress -->
+		<exclude name="WordPress.WP.DiscouragedConstants" />
+		<!-- Allow usage of functions that are normally discouraged in WordPress -->
+		<exclude name="WordPress.WP.DiscouragedFunctions" />
+		<!-- Allow usage of roles or custom capabilities without restriction -->
+		<exclude name="WordPress.WP.Capabilities" />
+		<!-- Allow direct inclusion of scripts and styles without enforcing enqueue functions -->
+		<exclude name="WordPress.WP.EnqueuedResources" />
+		<!-- Allow overriding of WordPress global variables like $post, $wpdb, etc. -->
+		<exclude name="WordPress.WP.GlobalVariablesOverride" />
+		<!-- Allow enqueued scripts/styles without enforcing parameters -->
+		<exclude name="WordPress.WP.EnqueuedResourceParameters" />
+		<!-- Allow any cron interval definition, regardless of frequency -->
+		<exclude name="WordPress.WP.CronInterval" />
+		<!-- Allow any posts_per_page value, including large numbers -->
+		<exclude name="WordPress.WP.PostsPerPage" />
+		<!-- Allow omitting the $single parameter in meta retrieval functions -->
+		<exclude name="WordPress.WP.GetMetaSingle" />
+
+		<!-- Allow 'for' without init/increment (no enforce to while) -->
+		<exclude name="Generic.CodeAnalysis.ForLoopShouldBeWhileLoop" />
+		<!-- Allow escaped strings that are not translated -->
+		<exclude name="WordPress.CodeAnalysis.EscapedNotTranslated" />
+
+		<!-- Allow global variables, functions, and classes without a project-specific prefix -->
+		<exclude name="WordPress.NamingConventions.PrefixAllGlobals" />
+		<!-- Allow custom post type slugs that may not follow WordPress naming restrictions -->
+		<exclude name="WordPress.NamingConventions.ValidPostTypeSlug" />
+
+		<!-- Disable WordPress i18n checks -->
+		<exclude name="WordPress.WP.I18n" />
+		<!-- Disable WordPress security checks -->
+		<exclude name="WordPress.Security" />
+		<!-- Disable WordPress DB checks -->
+		<exclude name="WordPress.DB" />
+	</rule>
+
+	<!-- #### Generic CodeAnalysis standards #### -->
+	<rule ref="Generic.CodeAnalysis.AssignmentInCondition">
+		<!-- Allow usage of assignment in conditions -->
+		<exclude name="Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition" />
+	</rule>
+</ruleset>
+	

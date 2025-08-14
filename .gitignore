@@ -1,0 +1,11 @@
+# Dependencies
+**/node_modules/
+**/vendor/
+
+# Build control files
+**/package-lock.json
+**/composer.lock
+
+# System files
+**/.local
+**/.DS_Store

@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<ruleset name="Frakto"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="https://schema.phpcodesniffer.com/phpcs.xsd">
+
+	<description>Frakto Coding Standards</description>
+	<arg name="tab-width" value="4" />
+
+	<!-- #### Coding standards #### -->
+
+	<!-- No emojis allowed -->
+	<rule ref="Frakto.PHP.NoEmojis" />
+	<!-- Enforce usage of spaces around array keys -->
+	<rule ref="Frakto.PHP.ArrayKeySpacing" />
+	<!-- Enforce usage of exit() and die() with parentheses -->
+	<rule ref="Frakto.PHP.ExitDieParentheses" />
+	<!-- Enforce appropriate use of closing tag (?>) -->
+	<rule ref="Frakto.PHP.ClosingTag" />
+
+	<!-- Enforce newline at end of file -->
+	<rule ref="Generic.Files.EndFileNewline" />
+
+	<!-- Enforce to use PDO instead of other database classes -->
+	<rule ref="Frakto.DB.RestrictedClasses" />
+	<!-- Enforce to use PDO instead of other database functions -->
+	<rule ref="Frakto.DB.RestrictedFunctions" />
+	<!-- Enforce to initialize PDO properly -->
+	<rule ref="Frakto.DB.PDOInitialization" />
+	<!-- Enforce to use PDO Query prepared -->
+	<rule ref="Frakto.DB.PreparedSQL" />
+
+
+	<!-- #### Docs standards #### -->
+
+	<rule ref="Squiz.Commenting">
+		<!-- Don't require //end ... for classes and functions -->
+		<exclude name="Squiz.Commenting.ClosingDeclarationComment.Missing" />
+
+		<!-- Don't require @subpackage tags -->
+		<exclude name="Squiz.Commenting.FileComment.MissingSubpackageTag" />
+		<!-- Don't require a @author value for Squiz -->
+		<exclude name="Squiz.Commenting.FileComment.IncorrectAuthor" />
+		<!-- Don't require @copyright tags -->
+		<exclude name="Squiz.Commenting.FileComment.MissingCopyrightTag" />
+		<!-- Don't require a @copyright value for Squiz -->
+		<exclude name="Squiz.Commenting.FileComment.IncorrectCopyright" />
+		<!-- Remove preferred order of tags -->
+		<exclude name="Squiz.Commenting.FileComment.SubpackageTagOrder" />
+		<exclude name="Squiz.Commenting.FileComment.CopyrightTagOrder" />
+
+		<!-- Not in Inline Docs standard, and a code smell -->
+		<exclude name="Squiz.Commenting.LongConditionClosingComment" />
+
+		<!-- Prefer int and bool instead of integer and boolean -->
+		<exclude name="Squiz.Commenting.FunctionComment.IncorrectParamVarName" />
+		<exclude name="Squiz.Commenting.FunctionComment.InvalidReturn" />
+	</rule>
+
+	<!-- Enforce period at end of block comment lines -->
+	<rule ref="Frakto.Docs.BlockCommentPeriod" />
+	<!-- Enforce @param appropriate use -->
+	<rule ref="Frakto.Docs.ParamDoc" />
+	<!-- Enforce @return appropriate use -->
+	<rule ref="Frakto.Docs.ReturnDoc" />
+
+	<!-- #### Exclusions #### -->
+
+	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>/node_modules/*</exclude-pattern>
+</ruleset>

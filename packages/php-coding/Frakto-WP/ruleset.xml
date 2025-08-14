@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<ruleset name="Frakto-WP"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="https://schema.phpcodesniffer.com/phpcs.xsd">
+
+	<description>Frakto WP Coding Standards</description>
+
+	<!-- #### WordPress standards #### -->
+
+	<rule ref="WordPress-Extra">
+		<!-- Allow usage of PHP short open tags (<?) -->
+		<exclude name="Generic.PHP.DisallowShortOpenTag" />
+		<!-- Allow commented-out code (max percentage check disabled) -->
+		<exclude name="Squiz.PHP.CommentedOutCode" />
+
+		<!-- Allow member references without $this-> or self:: -->
+		<exclude name="Squiz.Classes.SelfMemberReference.NotUsed" />
+
+		<!-- Allow usage of short ternary operator (?:) -->
+		<exclude name="Universal.Operators.DisallowShortTernary" />
+		<!-- Allow usage of standalone post-increment and post-decrement operators (++, - -) -->
+		<exclude name="Universal.Operators.DisallowStandalonePostIncrementDecrement" />
+		<!-- Exclude rule to allow increment/decrement operators (++/- -) inside complex expressions -->
+		<exclude name="Squiz.Operators.IncrementDecrementUsage" />
+		<!-- Exclude rule enforcing specific logical operator style (symbolic vs word-based) -->
+		<exclude name="Squiz.Operators.ValidLogicalOperators" />
+
+		<!-- Allow free usage of array key -->
+		<exclude name="WordPress.Arrays.ArrayKeySpacingRestrictions.SpacesAroundArrayKeys" />
+
+		<!-- Allow free usage of DF Classes and functions -->
+		<exclude name="WordPress.DB.RestrictedClasses" />
+		<exclude name="WordPress.DB.RestrictedFunctions" />
+	</rule>
+
+	<!-- #### Frakto standards #### -->
+
+	<rule ref="Frakto" />
+
+	<!-- #### Exclusions #### -->
+
+	<exclude-pattern>/docroot/wp-admin/*</exclude-pattern>
+	<exclude-pattern>/docroot/wp-includes/*</exclude-pattern>
+	<exclude-pattern>/docroot/xmlrpc.php</exclude-pattern>
+</ruleset>
+	
