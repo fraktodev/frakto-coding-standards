@@ -2,16 +2,18 @@ import { readdirSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const rulesDir = join(import.meta.dirname || new URL('.', import.meta.url).pathname, 'rules');
+const rulesDir  = join(import.meta.dirname || new URL('.', import.meta.url).pathname, 'rules');
 const ruleFiles = readdirSync(rulesDir).filter((f) => f.endsWith('.js'));
-const rules = {};
+const rules     = {};
 
 for (const file of ruleFiles) {
-	const name = basename(file, '.js');
+	const name   = basename(file, '.js');
 	const module = await import(pathToFileURL(join(rulesDir, file)));
 	rules[name] = module.default;
 }
 
+// eslint-disable-next-line
+/* eslint-disable @typescript-eslint/naming-convention */
 const commonRules = {
 	'no-console': 'warn',
 	'no-debugger': 'warn',
@@ -54,46 +56,58 @@ const commonRules = {
 
 export default {
 	meta: {
-		name: 'eslint-plugin-frakto-docs',
+		name: 'eslint-plugin-frakto-lint',
 		version: '1.0.0'
 	},
 	rules: {
+		'align-declarations': rules['align-declarations'],
+		'separate-control-keywords': rules['separate-control-keywords'],
+		'no-block-comments': rules['no-block-comments'],
+		'no-orphaned-docblocks': rules['no-orphaned-docblocks'],
 		'require-docblock': rules['require-docblock'],
-		'validate-description': rules['validate-description'],
-		'validate-params-js': rules['validate-params-js'],
-		'validate-params-ts': rules['validate-params-ts'],
-		'validate-throws': rules['validate-throws'],
-		'validate-returns': rules['validate-returns'],
-		'validate-tag-order': rules['validate-tag-order'],
-		'validate-spacing': rules['validate-spacing'],
-		'no-returns': rules['no-returns'],
-		'no-examples': rules['no-examples']
+		'docblock-validate-description': rules['docblock-validate-description'],
+		'docblock-validate-params-js': rules['docblock-validate-params-js'],
+		'docblock-validate-params-ts': rules['docblock-validate-params-ts'],
+		'docblock-validate-throws': rules['docblock-validate-throws'],
+		'docblock-validate-returns': rules['docblock-validate-returns'],
+		'docblock-validate-tag-order': rules['docblock-validate-tag-order'],
+		'docblock-validate-spacing': rules['docblock-validate-spacing'],
+		'docblock-no-returns': rules['docblock-no-returns'],
+		'docblock-no-examples': rules['docblock-no-examples']
 	},
 	configs: {
 		'recommended-js': {
 			rules: {
 				...commonRules,
-				'frakto-docs/require-docblock': 'error',
-				'frakto-docs/no-examples': 'error',
-				'frakto-docs/validate-description': 'error',
-				'frakto-docs/validate-params-js': 'error',
-				'frakto-docs/validate-throws': 'error',
-				'frakto-docs/validate-returns': 'error',
-				'frakto-docs/validate-tag-order': 'error',
-				'frakto-docs/validate-spacing': 'error'
+				'frakto-lint/align-declarations': 'error',
+				'frakto-lint/separate-control-keywords': 'error',
+				'frakto-lint/no-block-comments': 'error',
+				'frakto-lint/no-orphaned-docblocks': 'error',
+				'frakto-lint/require-docblock': 'error',
+				'frakto-lint/docblock-no-examples': 'error',
+				'frakto-lint/docblock-validate-description': 'error',
+				'frakto-lint/docblock-validate-params-js': 'error',
+				'frakto-lint/docblock-validate-throws': 'error',
+				'frakto-lint/docblock-validate-returns': 'error',
+				'frakto-lint/docblock-validate-tag-order': 'error',
+				'frakto-lint/docblock-validate-spacing': 'error'
 			}
 		},
 		'recommended-ts': {
 			rules: {
 				...commonRules,
-				'frakto-docs/require-docblock': 'error',
-				'frakto-docs/no-examples': 'error',
-				'frakto-docs/no-returns': 'error',
-				'frakto-docs/validate-description': 'error',
-				'frakto-docs/validate-params-ts': 'error',
-				'frakto-docs/validate-throws': 'error',
-				'frakto-docs/validate-tag-order': 'error',
-				'frakto-docs/validate-spacing': 'error'
+				'frakto-lint/align-declarations': 'error',
+				'frakto-lint/separate-control-keywords': 'error',
+				'frakto-lint/no-block-comments': 'error',
+				'frakto-lint/no-orphaned-docblocks': 'error',
+				'frakto-lint/require-docblock': 'error',
+				'frakto-lint/docblock-no-examples': 'error',
+				'frakto-lint/docblock-no-returns': 'error',
+				'frakto-lint/docblock-validate-description': 'error',
+				'frakto-lint/docblock-validate-params-ts': 'error',
+				'frakto-lint/docblock-validate-throws': 'error',
+				'frakto-lint/docblock-validate-tag-order': 'error',
+				'frakto-lint/docblock-validate-spacing': 'error'
 			}
 		}
 	}

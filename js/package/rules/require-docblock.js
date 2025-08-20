@@ -1,3 +1,5 @@
+import { getDocblock } from '../utils.js';
+
 export default {
 	meta: {
 		type: 'problem',
@@ -10,29 +12,40 @@ export default {
 	},
 	create(context) {
 		const sourceCode = context.sourceCode || context.getSourceCode();
-		const getDocblock = (node) => {
-			const before = sourceCode.getCommentsBefore(node);
 
-			let docblock = before.reverse().find((c) => c.type === 'Block' && c.value.trim().startsWith('*'));
-			if (docblock) return docblock;
-
-			if (node.parent?.type === 'VariableDeclarator') {
-				const decl = node.parent.parent;
-				const beforeDecl = sourceCode.getCommentsBefore(decl);
-				docblock = beforeDecl.reverse().find((c) => c.type === 'Block' && c.value.trim().startsWith('*'));
-				if (docblock) return docblock;
-			}
-
-			if (node.parent?.type === 'Property') {
-				const beforeProp = sourceCode.getCommentsBefore(node.parent);
-				docblock = beforeProp.reverse().find((c) => c.type === 'Block' && c.value.trim().startsWith('*'));
-				if (docblock) return docblock;
-			}
-
-			return null;
-		};
+		/**
+		 * Check if a docblock exists for a given node.
+		 *
+		 * @param {ASTNode} node - The node to check.
+		 *
+		 * @returns {void}
+		 */
 		const checkDocblock = (node) => {
-			const docblock = getDocblock(node);
+			// Skip arrow functions that are inline callbacks
+			if ('ArrowFunctionExpression' === node.type) {
+				// Skip if it's a callback in method calls like .map(), .filter(), .some(), etc.
+				if ('CallExpression' === node.parent?.type && node.parent.arguments.includes(node)) {
+					return;
+				}
+				// Skip if it's a simple one-liner (body is not a BlockStatement)
+				if ('BlockStatement' !== node.body.type) {
+					return;
+				}
+				// Skip if it's not directly assigned to a variable declaration (const, let, var)
+				if ('VariableDeclarator' !== node.parent?.type) {
+					return;
+				}
+				// Skip if the variable declaration is not at top level
+				if ('VariableDeclaration' !== node.parent?.parent?.type) {
+					return;
+				}
+				// Skip if the variable declaration is part of an export (will be handled by export checker)
+				if ('ExportNamedDeclaration' === node.parent?.parent?.parent?.type) {
+					return;
+				}
+			}
+
+			const docblock = getDocblock(sourceCode, node);
 
 			if (!docblock) {
 				context.report({
@@ -51,10 +64,44 @@ export default {
 				});
 			}
 		};
+
+		/**
+		 * Check if the export declaration has a docblock.
+		 *
+		 * @param {ASTNode} node - The node to check.
+		 *
+		 * @returns {void}
+		 */
+		const checkExportDeclaration = (node) => {
+			// Only check exports that contain arrow functions
+			if ('ExportNamedDeclaration' === node.type && node.declaration) {
+				if ('VariableDeclaration' === node.declaration.type && node.declaration.declarations) {
+					// Check if any declarator has an arrow function
+					const hasArrowFunction = node.declaration.declarations.some(
+						(declarator) => 'ArrowFunctionExpression' === declarator.init?.type
+					);
+					if (hasArrowFunction) {
+						checkDocblock(node);
+					}
+				}
+			}
+			else if ('ExportDefaultDeclaration' === node.type) {
+				// Only check if the default export is an arrow function
+				// Skip object literals, function declarations, classes, etc.
+				if ('ArrowFunctionExpression' === node.declaration?.type) {
+					checkDocblock(node);
+				}
+			}
+		};
+
+		// eslint-disable-next-line
+		/* eslint-disable @typescript-eslint/naming-convention */
 		return {
 			ClassDeclaration: checkDocblock,
 			MethodDefinition: checkDocblock,
-			ArrowFunctionExpression: checkDocblock
+			ArrowFunctionExpression: checkDocblock,
+			ExportNamedDeclaration: checkExportDeclaration,
+			ExportDefaultDeclaration: checkExportDeclaration
 		};
 	}
 };

@@ -1,14 +1,16 @@
 import { defineConfig } from 'eslint/config';
-import fraktoDocs from './package/index.js';
+import fraktoLint from './package/index.js';
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+// eslint-disable-next-line
+/* eslint-disable @typescript-eslint/naming-convention */
 export default defineConfig([
 	{
 		files: ['**/*.{js,mjs,cjs}'],
-		plugins: { js, tseslint, 'frakto-docs': fraktoDocs },
-		extends: ['js/recommended', 'tseslint/recommended', 'frakto-docs/recommended-js'],
+		plugins: { js, tseslint, 'frakto-lint': fraktoLint },
+		extends: ['js/recommended', 'tseslint/recommended', 'frakto-lint/recommended-js'],
 		languageOptions: {
 			globals: globals.browser,
 			ecmaVersion: 'latest',
@@ -18,8 +20,8 @@ export default defineConfig([
 	},
 	{
 		files: ['**/*.{ts,mts,cts}'],
-		plugins: { js, tseslint, 'frakto-docs': fraktoDocs },
-		extends: ['js/recommended', 'tseslint/recommended', 'frakto-docs/recommended-ts'],
+		plugins: { js, tseslint, 'frakto-lint': fraktoLint },
+		extends: ['js/recommended', 'tseslint/recommended', 'frakto-lint/recommended-ts'],
 		languageOptions: {
 			globals: globals.browser,
 			ecmaVersion: 'latest',

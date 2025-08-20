@@ -1,4 +1,6 @@
 import { parse } from 'comment-parser';
+import { getDocblock, getDocLoc, createExportValidator } from '../utils.js';
+
 export default {
 	meta: {
 		type: 'problem',
@@ -12,44 +14,16 @@ export default {
 	},
 	create(context) {
 		const sourceCode = context.sourceCode || context.getSourceCode();
-		const getDocblock = (node) => {
-			const before = sourceCode.getCommentsBefore(node);
 
-			let docblock = before.reverse().find((c) => c.type === 'Block' && c.value.trim().startsWith('*'));
-			if (docblock) return docblock;
-
-			if (node.parent?.type === 'VariableDeclarator') {
-				const decl = node.parent.parent;
-				const beforeDecl = sourceCode.getCommentsBefore(decl);
-				docblock = beforeDecl.reverse().find((c) => c.type === 'Block' && c.value.trim().startsWith('*'));
-				if (docblock) return docblock;
-			}
-
-			if (node.parent?.type === 'Property') {
-				const beforeProp = sourceCode.getCommentsBefore(node.parent);
-				docblock = beforeProp.reverse().find((c) => c.type === 'Block' && c.value.trim().startsWith('*'));
-				if (docblock) return docblock;
-			}
-
-			return null;
-		};
-		const getDocLoc = (docblock, identifier) => {
-			const startOffset = docblock.value.indexOf(identifier);
-
-			if (-1 === startOffset) {
-				return docblock.loc;
-			}
-
-			const endOffset = startOffset + identifier.length;
-			const startIndex = docblock.range[0] + 2 + startOffset;
-			const endIndex = docblock.range[0] + 2 + endOffset;
-			return {
-				start: sourceCode.getLocFromIndex(startIndex),
-				end: sourceCode.getLocFromIndex(endIndex)
-			};
-		};
+		/**
+		 * Validates the docblock for a given node.
+		 *
+		 * @param {ASTNode} node - The node to validate.
+		 *
+		 * @returns {void}
+		 */
 		const validate = (node) => {
-			const docblock = getDocblock(node);
+			const docblock = getDocblock(sourceCode, node);
 
 			if (!docblock) return;
 
@@ -77,7 +51,7 @@ export default {
 				return;
 			}
 
-			const loc = getDocLoc(docblock, description);
+			const loc = getDocLoc(sourceCode, docblock, description);
 
 			if (!description.endsWith('.')) {
 				context.report({
@@ -106,10 +80,18 @@ export default {
 				});
 			}
 		};
+
+		// Create a validator for export declarations.
+		const validateExport = createExportValidator(validate);
+
+		// eslint-disable-next-line
+		/* eslint-disable @typescript-eslint/naming-convention */
 		return {
 			ClassDeclaration: validate,
 			MethodDefinition: validate,
-			ArrowFunctionExpression: validate
+			ArrowFunctionExpression: validate,
+			ExportNamedDeclaration: validateExport,
+			ExportDefaultDeclaration: validateExport
 		};
 	}
 };

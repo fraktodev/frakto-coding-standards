@@ -1,4 +1,6 @@
 import { parse } from 'comment-parser';
+import { getDocblock, createExportValidator } from '../utils.js';
+
 export default {
 	meta: {
 		type: 'problem',
@@ -12,29 +14,16 @@ export default {
 	},
 	create(context) {
 		const sourceCode = context.sourceCode || context.getSourceCode();
-		const getDocblock = (node) => {
-			const before = sourceCode.getCommentsBefore(node);
 
-			let docblock = before.reverse().find((c) => c.type === 'Block' && c.value.trim().startsWith('*'));
-			if (docblock) return docblock;
-
-			if (node.parent?.type === 'VariableDeclarator') {
-				const decl = node.parent.parent;
-				const beforeDecl = sourceCode.getCommentsBefore(decl);
-				docblock = beforeDecl.reverse().find((c) => c.type === 'Block' && c.value.trim().startsWith('*'));
-				if (docblock) return docblock;
-			}
-
-			if (node.parent?.type === 'Property') {
-				const beforeProp = sourceCode.getCommentsBefore(node.parent);
-				docblock = beforeProp.reverse().find((c) => c.type === 'Block' && c.value.trim().startsWith('*'));
-				if (docblock) return docblock;
-			}
-
-			return null;
-		};
+		/**
+		 * Validates the docblock for a given node.
+		 *
+		 * @param {ASTNode} node - The node to validate.
+		 *
+		 * @returns {void}
+		 */
 		const validate = (node) => {
-			const docblock = getDocblock(node);
+			const docblock = getDocblock(sourceCode, node);
 
 			if (!docblock) return;
 
@@ -44,14 +33,14 @@ export default {
 
 			const tags = parsed[0]?.tags ?? [];
 
-			if (tags.length === 0) return;
+			if (0 === tags.length) return;
 
 			const expectedOrder = ['param', 'throws'];
-			const actualOrder = [];
-			const presentTags = new Set();
+			const actualOrder   = [];
+			const presentTags   = new Set();
 
 			for (const tag of tags) {
-				const tagName = tag.tag === 'return' ? 'returns' : tag.tag;
+				const tagName = 'return' === tag.tag ? 'returns' : tag.tag;
 
 				if (!presentTags.has(tagName)) {
 					actualOrder.push(tagName);
@@ -68,7 +57,7 @@ export default {
 			});
 
 			actualOrder.forEach((tagType) => {
-				if (!expectedOrder.includes(tagType) && tagType !== 'returns') {
+				if (!expectedOrder.includes(tagType) && 'returns' !== tagType) {
 					correctOrder.push(tagType);
 				}
 			});
@@ -88,9 +77,17 @@ export default {
 				});
 			}
 		};
+
+		// Create a validator for export declarations.
+		const validateExport = createExportValidator(validate);
+
+		// eslint-disable-next-line
+		/* eslint-disable @typescript-eslint/naming-convention */
 		return {
 			MethodDefinition: validate,
-			ArrowFunctionExpression: validate
+			ArrowFunctionExpression: validate,
+			ExportNamedDeclaration: validateExport,
+			ExportDefaultDeclaration: validateExport
 		};
 	}
 };
