@@ -1,6 +1,6 @@
 {
 	// Formater
-	"frakto.enableDiagnostics": false,
+	"frakto.enableDiagnostics": true,
 
 	// Window color customization
 	"workbench.colorCustomizations": {
