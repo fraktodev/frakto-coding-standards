@@ -1,0 +1,11 @@
+{
+	"name": "@frakto/common-coding-standards",
+	"productName": "Frakto Common Coding Standards",
+	"version": "1.0.0",
+	"description": "Common linting and formatting utilities.",
+	"author": "Frakto Team",
+	"license": "MIT",
+	"type": "module",
+	"private": true,
+	"main": "./index.mjs"
+}

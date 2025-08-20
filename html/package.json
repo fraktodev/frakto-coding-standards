@@ -1,0 +1,11 @@
+{
+	"name": "@frakto/html-coding-standards",
+	"productName": "Frakto HTML Coding Standards",
+	"version": "1.0.0",
+	"description": "HTML linting and formatting utilities.",
+	"author": "Frakto Team",
+	"license": "MIT",
+	"type": "module",
+	"private": true,
+	"main": "./index.mjs"
+}

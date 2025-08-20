@@ -1,6 +1,6 @@
 {
-	"name": "frakto/lint",
-	"description": "Dependencies for format files",
+	"name": "frakto/coding-standards",
+	"description": "Frakto coding standards for PHP.",
 	"type": "project",
 	"license": "MIT",
 	"minimum-stability": "dev",
@@ -14,7 +14,7 @@
 	"repositories": [
 		{
 			"type": "path",
-			"url": "./packages/php-coding",
+			"url": "./php/package",
 			"options": {
 				"symlink": true
 			}

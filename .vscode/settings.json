@@ -1,4 +1,7 @@
 {
+	// Formater
+	"frakto.enableDiagnostics": false,
+
 	// Window color customization
 	"workbench.colorCustomizations": {
 		"activityBar.activeBackground": "#a280ff",
@@ -36,6 +39,7 @@
 		"docroot",
 		"ENCAPSED",
 		"frakto",
+		"fraktodocs",
 		"mysql",
 		"mysqli",
 		"oxlint",
@@ -54,6 +58,7 @@
 		"squizlabs",
 		"wpcs",
 		"xmlreader",
-		"xmlrpc"
+		"xmlrpc",
+		"yoda"
 	]
 }

@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 
-import { execFile } from 'child_process';
+// Dependencies.
+import { spawn } from 'child_process';
 import { ESLint } from 'eslint';
 import prettier from 'prettier';
 import path from 'path';
+import process from 'process';
 
 /**
  * Throws an error with the specified message.
  * @param {*} message - The error message to throw.
  *
- * @returns {void}
+ * @returns {void} - No return value.
  */
 const throwError = (message) => {
-	const errorMessage = typeof message === 'string' ? message : message.toString();
+	const errorMessage = 'string' === typeof message ? message : message.toString();
 	process.stderr.write(errorMessage);
 	process.exit(1);
 };
@@ -20,7 +22,7 @@ const throwError = (message) => {
 /**
  * Retrieves and validates the payload from the environment variable.
  *
- * @returns {Object} The parsed payload object.
+ * @returns {object} - The parsed payload object.
  */
 const getPayload = () => {
 	const rawPayload = process.env.FRAKTO_PAYLOAD;
@@ -43,7 +45,7 @@ const getPayload = () => {
  *
  * @param {string} language - The programming language to get the formatter for.
  *
- * @returns {string}
+ * @returns {string} - The name of the formatter.
  */
 const getFormatter = (language) => {
 	const formatters = {
@@ -63,7 +65,7 @@ const getFormatter = (language) => {
  *
  * @param {string} language - The programming language to get the linter for.
  *
- * @returns {string}
+ * @returns {string} - The name of the linter.
  */
 const getLinter = (language) => {
 	const linters = {
@@ -80,7 +82,7 @@ const getLinter = (language) => {
  *
  * @param {string} language - The programming language to get the parser for.
  *
- * @returns {string}
+ * @returns {string} - The name of the parser.
  */
 const getParser = (language) => {
 	const parsers = {
@@ -97,16 +99,16 @@ const getParser = (language) => {
 /**
  * Prepares PHP diagnostics for the response payload.
  *
- * @param {Object} data   - The diagnostics data.
+ * @param {object} data   - The diagnostics data.
  * @param {string} source - The source of the diagnostics.
  *
- * @returns {String[]}
+ * @returns {string[]} - The parsed diagnostics.
  */
 const parsePHPDiagnostics = (data, source) => {
 	return data.files.STDIN.messages.map((diagnostic) => ({
 		line: diagnostic.line || 0,
 		column: diagnostic.column || 0,
-		type: diagnostic.type === 'ERROR' || diagnostic.type === 'WARNING' ? diagnostic.type : 'INFO',
+		type: 'ERROR' === diagnostic.type || 'WARNING' === diagnostic.type ? diagnostic.type : 'INFO',
 		message: diagnostic.message || '',
 		source: source,
 		code: diagnostic.source || 'PHP Coding Standards'
@@ -116,10 +118,10 @@ const parsePHPDiagnostics = (data, source) => {
 /**
  * Prepares OxLint diagnostics for the response payload.
  *
- * @param {Object} data   - The diagnostics data.
+ * @param {object} data   - The diagnostics data.
  * @param {string} source - The source of the diagnostics.
  *
- * @returns {String[]}
+ * @returns {string[]} - The parsed diagnostics.
  */
 const parseESLintDiagnostics = (data, source) => {
 	return data.flatMap((result) =>
@@ -128,7 +130,7 @@ const parseESLintDiagnostics = (data, source) => {
 			column: diagnostic.column || 0,
 			endLine: diagnostic.endLine || 0,
 			endColumn: diagnostic.endColumn || 0,
-			type: diagnostic.severity === 2 ? 'ERROR' : 'WARNING',
+			type: 2 === diagnostic.severity ? 'ERROR' : 'WARNING',
 			message: diagnostic.message || '',
 			source: source,
 			code: diagnostic.ruleId || 'ESLint Coding Standards'
@@ -136,7 +138,14 @@ const parseESLintDiagnostics = (data, source) => {
 	);
 };
 
-export const runESLint = async (code) => {
+/**
+ * Runs ESLint on the provided code.
+ *
+ * @param {string} code - The code to lint.
+ *
+ * @returns {object} - The ESLint results.
+ */
+const runESLint = async (code) => {
 	const eslint = new ESLint({
 		overrideConfigFile: path.join(process.cwd(), 'eslint.config.js')
 	});
@@ -163,36 +172,39 @@ const run = async () => {
 		const linter = getLinter(request.language);
 
 		if (['format', 'both'].includes(request.mode)) {
-			if (formatter === 'prettier') {
+			if ('prettier' === formatter) {
 				const parser = getParser(request.language);
 				const configFile = await prettier.resolveConfigFile();
 				const prettierFraktoConfig = await prettier.resolveConfig(configFile);
-				const prettierUserConfig = request.prettierConfig || {};
-				const prettierConfig = { parser: parser, ...prettierFraktoConfig, ...prettierUserConfig };
+				const prettierConfig = { parser: parser, ...prettierFraktoConfig };
 				const formatted = await prettier.format(request.content, prettierConfig);
 
 				response.formatted = formatted || request.content;
 			}
 
-			if (formatter === 'phpcs') {
+			if ('phpcs' === formatter) {
 				const linterStandard = request.linterStandard || 'PSR2';
 				const phpcbfPath = path.join(process.cwd(), 'vendor', 'bin', 'phpcbf');
 				const formatted = await new Promise((resolve, reject) => {
-					const child = execFile(
-						'php',
-						[phpcbfPath, `--standard=${linterStandard}`, '-'],
-						{ maxBuffer: request.maxExecTime },
-						(error, stdout, stderr) => {
-							if (error && !stdout) {
-								return reject(new Error(error.message || stderr));
-							}
+					let stdout = '';
+					let stderr = '';
+					const child = spawn('php', [phpcbfPath, `--standard=${linterStandard}`, '-']);
 
-							resolve(stdout || request.content);
-						}
-					);
-
+					child.stdout.on('data', (data) => {
+						stdout += data.toString();
+					});
+					child.stderr.on('data', (data) => {
+						stderr += data.toString();
+					});
 					child.on('error', (error) => {
 						reject(error);
+					});
+					child.on('close', (code) => {
+						if (0 !== code && !stdout) {
+							return reject(new Error(stderr || `phpcbf failed with exit code ${code}`));
+						}
+
+						resolve(stdout || request.content);
 					});
 
 					child.stdin.write(request.content);
@@ -204,7 +216,7 @@ const run = async () => {
 		}
 
 		if (['lint', 'both'].includes(request.mode)) {
-			if (linter === 'eslint') {
+			if ('eslint' === linter) {
 				const linterStandard = request.linterStandard || 'ESLint';
 				const diagnostic = await runESLint(response.formatted || request.content);
 
@@ -212,25 +224,28 @@ const run = async () => {
 				response.diagnostics = parseESLintDiagnostics(diagnostic, linterStandard);
 			}
 
-			if (formatter === 'phpcs') {
+			if ('phpcs' === formatter) {
 				const linterStandard = request.linterStandard || 'PSR2';
 				const phpcsPath = path.join(process.cwd(), 'vendor', 'bin', 'phpcs');
 				const diagnostic = await new Promise((resolve, reject) => {
-					const child = execFile(
-						'php',
-						[phpcsPath, `--standard=${linterStandard}`, '--report=json', '-'],
-						{ maxBuffer: request.maxExecTime },
-						(error, stdout, stderr) => {
-							if (error && !stdout) {
-								return reject(new Error(error.message || stderr));
-							}
-
-							resolve(stdout || request.content);
-						}
-					);
-
+					let stdout = '';
+					let stderr = '';
+					const child = spawn('php', [phpcsPath, `--standard=${linterStandard}`, '--report=json', '-']);
+					child.stdout.on('data', (data) => {
+						stdout += data.toString();
+					});
+					child.stderr.on('data', (data) => {
+						stderr += data.toString();
+					});
 					child.on('error', (error) => {
 						reject(error);
+					});
+					child.on('close', (code) => {
+						if (0 !== code && !stdout) {
+							return reject(new Error(stderr || `phpcs failed with exit code ${code}`));
+						}
+
+						resolve(stdout || request.content);
 					});
 
 					child.stdin.write(response.formatted || request.content);

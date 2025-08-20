@@ -1,0 +1,36 @@
+{
+	"name": "frakto/php-coding-standards",
+	"type": "phpcodesniffer-standard",
+	"description": "PHP_CodeSniffer rules (sniffs) to enforce Frakto coding conventions.",
+	"authors": [
+		{
+			"name": "Frakto Team",
+			"email": "hello@frakto.dev"
+		}
+	],
+	"license": "MIT",
+	"require": {
+		"php": ">=7.0",
+		"ext-filter": "*",
+		"ext-libxml": "*",
+		"ext-tokenizer": "*",
+		"ext-xmlreader": "*",
+		"squizlabs/php_codesniffer": "^3.13.0",
+		"phpcsstandards/phpcsutils": "^1.1.0",
+		"phpcsstandards/phpcsextra": "^1.4.0"
+	},
+	"require-dev": {
+		"phpcompatibility/php-compatibility": "^9.0",
+		"phpunit/phpunit": "^4.0 || ^5.0 || ^6.0 || ^7.0 || ^8.0 || ^9.0",
+		"phpcsstandards/phpcsdevtools": "^1.2.0",
+		"php-parallel-lint/php-parallel-lint": "^1.4.0",
+		"php-parallel-lint/php-console-highlighter": "^1.0.0",
+		"wp-coding-standards/wpcs": "^3.0"
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		},
+		"lock": false
+	}
+}
