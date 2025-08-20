@@ -60,27 +60,40 @@ export default {
 	rules: {
 		'require-docblock': rules['require-docblock'],
 		'validate-description': rules['validate-description'],
+		'validate-params-js': rules['validate-params-js'],
+		'validate-params-ts': rules['validate-params-ts'],
 		'validate-throws': rules['validate-throws'],
 		'validate-returns': rules['validate-returns'],
-		'no-returns': rules['no-returns']
+		'validate-tag-order': rules['validate-tag-order'],
+		'validate-spacing': rules['validate-spacing'],
+		'no-returns': rules['no-returns'],
+		'no-examples': rules['no-examples']
 	},
 	configs: {
 		'recommended-js': {
 			rules: {
 				...commonRules,
 				'frakto-docs/require-docblock': 'error',
+				'frakto-docs/no-examples': 'error',
 				'frakto-docs/validate-description': 'error',
+				'frakto-docs/validate-params-js': 'error',
 				'frakto-docs/validate-throws': 'error',
-				'frakto-docs/validate-returns': 'error'
+				'frakto-docs/validate-returns': 'error',
+				'frakto-docs/validate-tag-order': 'error',
+				'frakto-docs/validate-spacing': 'error'
 			}
 		},
 		'recommended-ts': {
 			rules: {
 				...commonRules,
 				'frakto-docs/require-docblock': 'error',
+				'frakto-docs/no-examples': 'error',
+				'frakto-docs/no-returns': 'error',
 				'frakto-docs/validate-description': 'error',
+				'frakto-docs/validate-params-ts': 'error',
 				'frakto-docs/validate-throws': 'error',
-				'frakto-docs/no-returns': 'error'
+				'frakto-docs/validate-tag-order': 'error',
+				'frakto-docs/validate-spacing': 'error'
 			}
 		}
 	}

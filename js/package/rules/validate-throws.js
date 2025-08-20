@@ -136,6 +136,7 @@ export default {
 			}
 
 			const expectedType = type.toLowerCase();
+
 			if (expectedType !== type) {
 				context.report({
 					loc: getDocLoc(docblock, `@throws {${type}}`),
@@ -177,10 +178,10 @@ export default {
 				return;
 			}
 
-			if (40 < description.length) {
+			if (80 < description.length) {
 				context.report({
 					loc: getDocLoc(docblock, `@throws {${type}}`),
-					message: '@throws description must not exceed 40 characters.'
+					message: '@throws description must not exceed 80 characters.'
 				});
 				return;
 			}

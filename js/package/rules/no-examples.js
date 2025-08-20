@@ -3,11 +3,11 @@ export default {
 	meta: {
 		type: 'problem',
 		docs: {
-			description: 'Ensure docblock returns are valid.',
+			description: 'Enforce the absence of @example tags in docblocks.',
 			category: 'Best Practices',
 			recommended: true
 		},
-		fixable: 'code',
+		fixable: null,
 		schema: []
 	},
 	create(context) {
@@ -57,64 +57,23 @@ export default {
 
 			if (!parsed) return;
 
+			const examples = parsed[0]?.examples ?? [];
 			const tags = parsed[0]?.tags ?? [];
-			const returnsTag = tags.find((tag) => tag.tag === 'return' || tag.tag === 'returns');
 
-			if (!returnsTag) {
+			if (examples.length > 0) {
 				context.report({
-					loc: docblock.loc,
-					message: 'Declaration must have a return type even if it is void.'
+					loc: getDocLoc(docblock, '@example'),
+					message: '@example tags are not allowed in docblocks.'
 				});
 				return;
 			}
 
-			let { tag: label, type, description } = returnsTag;
-
-			if (label === 'return') {
+			const exampleTags = tags.filter((tag) => tag.tag === 'example');
+			if (exampleTags.length > 0) {
 				context.report({
-					loc: getDocLoc(docblock, '@return'),
-					message: `Use "@returns" instead of "@return".`,
-					fix: (fixer) => {
-						const fixed = docblock.value.replace('@return', '@returns');
-						return fixer.replaceText(docblock, `/*${fixed}*/`);
-					}
+					loc: getDocLoc(docblock, '@example'),
+					message: '@example tags are not allowed in docblocks.'
 				});
-				return;
-			}
-
-			if (!type) {
-				context.report({
-					loc: getDocLoc(docblock, '@returns'),
-					message: `@returns must include a type.`
-				});
-				return;
-			}
-
-			const expectedType = type.toLowerCase();
-
-			if (expectedType !== type) {
-				context.report({
-					loc: getDocLoc(docblock, `@returns {${type}}`),
-					message: `@returns type "${type}" must be lowercase "${expectedType}".`,
-					fix: (fixer) => {
-						const fixed = docblock.value.replace(`@returns {${type}}`, `@returns {${expectedType}}`);
-						return fixer.replaceText(docblock, `/*${fixed}*/`);
-					}
-				});
-				type = expectedType;
-				return;
-			}
-
-			if (description) {
-				context.report({
-					loc: getDocLoc(docblock, `@returns {${type}}`),
-					message: `@returns must not include a description.`,
-					fix: (fixer) => {
-						const fixed = docblock.value.replace(`@returns {${type}} - ${description}`, `@returns {${type}}`);
-						return fixer.replaceText(docblock, `/*${fixed}*/`);
-					}
-				});
-				return;
 			}
 		};
 		return {
