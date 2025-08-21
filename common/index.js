@@ -5,14 +5,8 @@ import { getPayload, throwError } from '../common/utils.js';
 import prettier from 'prettier';
 import process from 'process';
 
-/**
- * Runs the main logic of the script.
- *
- * @throws {error} If an error occurs during processing.
- * @returns {promise<void>}
- */
 (async () => {
-	const request = getPayload();
+	const request  = getPayload();
 	const response = {
 		formatted: null,
 		diagnostics: null,
@@ -20,14 +14,11 @@ import process from 'process';
 	};
 
 	// Run formatter
-	if (['format', 'both'].includes(request.mode)) {
-		const configFile = await prettier.resolveConfigFile();
-		const prettierFraktoConfig = await prettier.resolveConfig(configFile);
-		const prettierConfig = { filepath: request.filePath, ...prettierFraktoConfig };
-		const formatted = await prettier.format(request.content, prettierConfig);
-
-		response.formatted = formatted || request.content;
-	}
+	let content = request.content;
+	const prettierConfigFile   = await prettier.resolveConfigFile();
+	const prettierFraktoConfig = await prettier.resolveConfig(prettierConfigFile);
+	const prettierConfig       = { filepath: request.filePath, ...prettierFraktoConfig };
+	response.formatted = (await prettier.format(request.content, prettierConfig)) || content;
 
 	// Write response
 	process.stdout.write(JSON.stringify(response));
