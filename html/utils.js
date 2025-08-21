@@ -31,6 +31,7 @@ const selfClosingTags = [
  * Removes trailing slashes from self-closing HTML tags.
  *
  * @param {string} html - The HTML content to process.
+ *
  * @returns {string}
  */
 export const removeSelfClosingSlash = (html) => {
