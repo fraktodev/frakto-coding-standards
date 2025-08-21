@@ -1,21 +1,20 @@
 {
 	"name": "@frakto/coding-standards",
-	"productName": "Frakto Coding Standards",
 	"version": "1.0.0",
 	"description": "Frakto coding standards for various languages.",
 	"author": "Frakto Team",
 	"license": "MIT",
 	"type": "module",
 	"private": true,
-	"workspaces": [
-		"common",
-		"css",
-		"html",
-		"js",
-		"php"
-	],
 	"devDependencies": {
+		"@eslint/js": "^9.33.0",
 		"@frakto/eslint-plugin-frakto": "file:packages/eslint-plugin-frakto",
-		"prettier": "^3.3.3"
+		"comment-parser": "^1.4.1",
+		"eslint": "^9.33.0",
+		"eslint-plugin-package-json": "^0.54.0",
+		"globals": "^16.3.0",
+		"jsonc-eslint-parser": "^2.4.0",
+		"prettier": "^3.3.3",
+		"typescript-eslint": "^8.39.1"
 	}
 }

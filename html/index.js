@@ -14,15 +14,19 @@ import process from 'process';
 		debug: null
 	};
 
-	// Run formatter
 	let content = request.content;
-	const prettierConfigFile   = await prettier.resolveConfigFile();
-	const prettierFraktoConfig = await prettier.resolveConfig(prettierConfigFile);
-	const prettierConfig       = { filepath: request.filePath, ...prettierFraktoConfig };
+	const mode = request.mode;
 
-	content = (await prettier.format(request.content, prettierConfig)) || content;
-	content = removeSelfClosingSlash(content) || content;
-	response.formatted = content;
+	// Run formatter
+	if (['format', 'both'].includes(mode)) {
+		const prettierConfigFile   = await prettier.resolveConfigFile();
+		const prettierFraktoConfig = await prettier.resolveConfig(prettierConfigFile);
+		const prettierConfig       = { filepath: request.filePath, ...prettierFraktoConfig };
+
+		content = (await prettier.format(content, prettierConfig)) || content;
+		content = removeSelfClosingSlash(content) || content;
+		response.formatted = content;
+	}
 
 	// Write response
 	process.stdout.write(JSON.stringify(response));

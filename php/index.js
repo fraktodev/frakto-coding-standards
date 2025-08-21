@@ -12,6 +12,7 @@ import process from 'process';
  *
  * @param {object} data   - The diagnostics data.
  * @param {string} source - The source of the diagnostics.
+ *
  * @returns {string[]}
  */
 const parseDiagnostics = (data, source) => {
@@ -21,19 +22,13 @@ const parseDiagnostics = (data, source) => {
 		type: 'ERROR' === diagnostic.type || 'WARNING' === diagnostic.type ? diagnostic.type : 'INFO',
 		message: diagnostic.message || '',
 		source: source,
-		code: diagnostic.source || 'PHP Coding Standards'
+		code: diagnostic.source || 'Code Sniffer'
 	}));
 };
 
-/**
- * Runs the main logic of the script.
- *
- * @throws {error} If an error occurs during processing.
- * @returns {promise<void>}
- */
 (async () => {
-	const dirName = path.dirname(fileURLToPath(import.meta.url));
-	const request = getPayload();
+	const dirName  = path.dirname(fileURLToPath(import.meta.url));
+	const request  = getPayload();
 	const response = {
 		formatted: null,
 		diagnostics: null,
@@ -43,8 +38,8 @@ const parseDiagnostics = (data, source) => {
 	// Run formatter
 	if (['format', 'both'].includes(request.mode)) {
 		const linterStandard = request.linterStandard || 'PSR2';
-		const phpcbfPath = path.join(dirName, '../vendor/bin/phpcbf');
-		const formatted = await new Promise((resolve, reject) => {
+		const phpcbfPath     = path.join(dirName, '../vendor/bin/phpcbf');
+		const formatted      = await new Promise((resolve, reject) => {
 			let stdout = '';
 			let stderr = '';
 			const child = spawn('php', [phpcbfPath, `--standard=${linterStandard}`, '-']);
@@ -76,8 +71,8 @@ const parseDiagnostics = (data, source) => {
 	// Run linter
 	if (['lint', 'both'].includes(request.mode)) {
 		const linterStandard = request.linterStandard || 'PSR2';
-		const phpcsPath = path.join(dirName, '../vendor/bin/phpcs');
-		const diagnostic = await new Promise((resolve, reject) => {
+		const phpcsPath      = path.join(dirName, '../vendor/bin/phpcs');
+		const diagnostic     = await new Promise((resolve, reject) => {
 			let stdout = '';
 			let stderr = '';
 			const child = spawn('php', [phpcsPath, `--standard=${linterStandard}`, '--report=json', '-']);

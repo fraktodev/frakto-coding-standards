@@ -25,7 +25,7 @@ const parseDiagnostics = (data, source) => {
 			type: 2 === diagnostic.severity ? 'ERROR' : 'WARNING',
 			message: diagnostic.message || '',
 			source: source,
-			code: diagnostic.ruleId || 'ESLint Coding Standards'
+			code: diagnostic.ruleId || 'ESLint JS'
 		}))
 	);
 };

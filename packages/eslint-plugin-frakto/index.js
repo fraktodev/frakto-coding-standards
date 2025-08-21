@@ -17,6 +17,7 @@ const commonRules = {
 	'no-console': 'warn',
 	'no-debugger': 'warn',
 	'no-var': 'error',
+	'@typescript-eslint/no-explicit-any': 'off',
 	'@typescript-eslint/no-unused-vars': ['warn'],
 	'@typescript-eslint/naming-convention': [
 		'error',
@@ -107,6 +108,65 @@ export default {
 				'frakto-lint/docblock-validate-throws': 'error',
 				'frakto-lint/docblock-validate-tag-order': 'error',
 				'frakto-lint/docblock-validate-spacing': 'error'
+			}
+		},
+		'recommended-pkg': {
+			rules: {
+				'package-json/require-name': ['error', { ignorePrivate: false }],
+				'package-json/require-version': ['error', { ignorePrivate: false }],
+				'package-json/require-author': ['error', { ignorePrivate: true }],
+				'package-json/require-bugs': ['error', { ignorePrivate: true }],
+				'package-json/require-keywords': ['error', { ignorePrivate: true }],
+				'package-json/order-properties': [
+					'error',
+					{
+						order: [
+							'name',
+							'displayName',
+							'productName',
+							'version',
+							'description',
+							'homepage',
+							'author',
+							'license',
+							'types',
+							'typings',
+							'keywords',
+							'bugs',
+							'contributors',
+							'repository',
+							'funding',
+							'main',
+							'module',
+							'exports',
+							'bin',
+							'man',
+							'directories',
+							'files',
+							'workspaces',
+							'type',
+							'private',
+							'publishConfig',
+							'scripts',
+							'config',
+							'dependencies',
+							'devDependencies',
+							'peerDependencies',
+							'optionalDependencies',
+							'bundledDependencies',
+							'overrides',
+							'resolutions',
+							'engines',
+							'os',
+							'cpu',
+							'browserslist',
+							'eslintConfig',
+							'prettier',
+							'husky',
+							'lint-staged'
+						]
+					}
+				]
 			}
 		}
 	}
