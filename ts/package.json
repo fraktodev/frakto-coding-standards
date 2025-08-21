@@ -1,8 +1,8 @@
 {
-	"name": "@frakto/js-coding-standards",
-	"productName": "Frakto JavaScript Coding Standards",
+	"name": "@frakto/ts-coding-standards",
+	"productName": "Frakto TypeScript Coding Standards",
 	"version": "1.0.0",
-	"description": "JavaScript linting and formatting utilities.",
+	"description": "TypeScript linting and formatting utilities.",
 	"author": "Frakto Team",
 	"license": "MIT",
 	"type": "module",

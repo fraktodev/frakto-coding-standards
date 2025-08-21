@@ -2,9 +2,7 @@
 
 ### Workspace Context
 
-This workspace contains all the external scripts that power the analysis and formatting engine used by the Frakto Code Engine VS Code extension.
-
-Each script is designed to receive a standardized payload from the extension, process it using tools like prettier, eslint, phpcs, pylint, etc., and return a structured response that the extension can interpret.
+This is a monorepo containing Frakto's coding standards and linting tools for multiple languages (JavaScript/TypeScript, PHP, HTML, CSS). The repository provides standardized formatting and linting configurations that can be used by the Frakto Code Engine VS Code extension.
 
 ### Role Assumed
 

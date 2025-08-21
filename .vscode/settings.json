@@ -1,7 +1,4 @@
 {
-	// Formater
-	"frakto.enableDiagnostics": true,
-
 	// Window color customization
 	"workbench.colorCustomizations": {
 		"activityBar.activeBackground": "#a280ff",

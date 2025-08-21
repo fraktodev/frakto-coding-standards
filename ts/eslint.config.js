@@ -7,9 +7,9 @@ import tseslint from 'typescript-eslint';
 /* eslint-disable @typescript-eslint/naming-convention */
 export default defineConfig([
 	{
-		files: ['**/*.{js,mjs,cjs}'],
+		files: ['**/*.{ts,mts,cts}'],
 		plugins: { js, tseslint, 'frakto-lint': fraktoLint },
-		extends: ['js/recommended', 'tseslint/recommended', 'frakto-lint/recommended-js'],
+		extends: ['js/recommended', 'tseslint/recommended', 'frakto-lint/recommended-ts'],
 		languageOptions: {
 			globals: globals.browser,
 			ecmaVersion: 'latest',
