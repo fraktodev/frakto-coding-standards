@@ -12,6 +12,7 @@ import process from 'process';
  *
  * @param {object} data   - The diagnostics data.
  * @param {string} source - The source of the diagnostics.
+ *
  * @returns {string[]}
  */
 const parseDiagnostics = (data, source) => {
@@ -29,14 +30,8 @@ const parseDiagnostics = (data, source) => {
 	);
 };
 
-/**
- * Runs the main logic of the script.
- *
- * @throws {error} If an error occurs during processing.
- * @returns {promise<void>}
- */
 (async () => {
-	const request = getPayload();
+	const request  = getPayload();
 	const response = {
 		formatted: null,
 		diagnostics: null,
@@ -44,30 +39,37 @@ const parseDiagnostics = (data, source) => {
 	};
 
 	let content = request.content;
+	const mode                 = request.mode;
+	const linterStandard       = request.linterStandard || 'ESLint';
+
+	const prettierConfigFile   = await prettier.resolveConfigFile();
+	const prettierFraktoConfig = await prettier.resolveConfig(prettierConfigFile);
+	const prettierConfig       = { filepath: request.filePath, ...prettierFraktoConfig };
+
+	const eslintConfigFile     = path.join(process.cwd(), 'eslint.config.js');
+	const eslintConfig         = { cwd: request.workspacePath, overrideConfigFile: eslintConfigFile };
+	const eslint               = new ESLint(['format', 'both'].includes(mode) ? { ...eslintConfig, fix: true } : eslintConfig);
 
 	// Run formatter
-	if (['format', 'both'].includes(request.mode)) {
-		const prettierConfigFile = await prettier.resolveConfigFile();
-		const prettierFraktoConfig = await prettier.resolveConfig(prettierConfigFile);
-		const prettierConfig = { filepath: request.filePath, ...prettierFraktoConfig };
-
+	if ('format' === mode) {
 		content = (await prettier.format(content, prettierConfig)) || content;
+		content = (await eslint.lintText(content, { filePath: request.filePath }))?.[0]?.output || content;
 		response.formatted = content;
 	}
 
 	// Run linter
-	if (['lint', 'both'].includes(request.mode)) {
-		const linterStandard = request.linterStandard || 'ESLint';
-		const esLintConfigFile = path.join(process.cwd(), 'eslint.config.js');
-		const esLintConfig = { cwd: request.workspacePath, overrideConfigFile: esLintConfigFile };
-		const eslint = new ESLint(['both'].includes(request.mode) ? { ...esLintConfig, ...{ fix: true } } : esLintConfig);
-		const diagnostic = await eslint.lintText(content, { filePath: request.filePath });
+	if ('lint' === mode) {
+		const diagnostics = await eslint.lintText(content, { filePath: request.filePath });
+		response.diagnostics = parseDiagnostics(diagnostics, linterStandard);
+	}
 
-		if (['both'].includes(request.mode)) {
-			content = diagnostic?.[0]?.output || content;
-			response.formatted = content;
-		}
-		response.diagnostics = parseDiagnostics(diagnostic, linterStandard);
+	// Run formatter and linter
+	if ('both' === mode) {
+		content = (await prettier.format(content, prettierConfig)) || content;
+		const linter = await eslint.lintText(content, { filePath: request.filePath });
+		content = linter?.[0]?.output || content;
+		response.formatted = content;
+		response.diagnostics = parseDiagnostics(linter, linterStandard);
 	}
 
 	// Write response

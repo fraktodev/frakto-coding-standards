@@ -4,7 +4,8 @@ import process from 'process';
 /**
  * Throws an error with the specified message.
  *
- * @param {*} message - The error message to throw.
+ * @param {string} message - The error message to throw.
+ *
  * @returns {void}
  */
 export const throwError = (message) => {
@@ -27,7 +28,8 @@ export const getPayload = () => {
 	let payload;
 	try {
 		payload = JSON.parse(rawPayload);
-	} catch (error) {
+	}
+	catch (error) {
 		throwError(`Invalid FRAKTO_PAYLOAD JSON: ${error.message}`);
 	}
 

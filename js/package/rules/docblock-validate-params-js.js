@@ -149,9 +149,11 @@ export default {
 				if (parsed.length !== actualValue.length) return false;
 
 				return parsed.every((val, i) => val === actualValue[i]);
+				/* eslint-disable @typescript-eslint/no-unused-vars */
 			}
 			catch (e) {
 				return false;
+				/* eslint-enable @typescript-eslint/no-unused-vars */
 			}
 		};
 
@@ -335,6 +337,7 @@ export default {
 				if (isOptional) {
 					const expectedDefault = getParamValue(realParam.right);
 					const expectedType    = getValueType(expectedDefault);
+					const normalizedDef   = 'true' === def ? true : 'false' === def ? false : def;
 
 					if (expectedType !== type) {
 						context.report({
@@ -349,7 +352,7 @@ export default {
 						return;
 					}
 
-					if (!optional || (!Array.isArray(expectedDefault) && expectedDefault !== def)) {
+					if (!optional || (!Array.isArray(expectedDefault) && expectedDefault !== normalizedDef)) {
 						context.report({
 							loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name}`),
 							message: `@param "${name}" is optional but does not match default value "${expectedDefault}".`,
@@ -400,7 +403,6 @@ export default {
 		// Create a validator for export declarations.
 		const validateExport = createExportValidator(validate);
 
-		// eslint-disable-next-line
 		/* eslint-disable @typescript-eslint/naming-convention */
 		return {
 			MethodDefinition: validate,

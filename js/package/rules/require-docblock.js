@@ -94,7 +94,6 @@ export default {
 			}
 		};
 
-		// eslint-disable-next-line
 		/* eslint-disable @typescript-eslint/naming-convention */
 		return {
 			ClassDeclaration: checkDocblock,

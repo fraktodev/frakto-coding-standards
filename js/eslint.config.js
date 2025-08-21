@@ -4,7 +4,6 @@ import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-// eslint-disable-next-line
 /* eslint-disable @typescript-eslint/naming-convention */
 export default defineConfig([
 	{

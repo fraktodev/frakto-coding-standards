@@ -20,7 +20,7 @@ export default {
 				comments.forEach((comment) => {
 					if ('Block' === comment.type) {
 						const value = comment.value.trim();
-						if (value.startsWith('*') || comment.value.startsWith('*')) {
+						if (value.startsWith('*') || comment.value.startsWith('*') || value.startsWith('eslint-')) {
 							return;
 						}
 

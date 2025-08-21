@@ -12,7 +12,6 @@ for (const file of ruleFiles) {
 	rules[name] = module.default;
 }
 
-// eslint-disable-next-line
 /* eslint-disable @typescript-eslint/naming-convention */
 const commonRules = {
 	'no-console': 'warn',
