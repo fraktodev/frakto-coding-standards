@@ -15,6 +15,7 @@
 		"php"
 	],
 	"devDependencies": {
+		"@frakto/eslint-plugin-frakto": "file:packages/eslint-plugin-frakto",
 		"prettier": "^3.3.3"
 	}
 }

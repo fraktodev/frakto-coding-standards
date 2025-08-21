@@ -10,7 +10,6 @@
 	"main": "./index.mjs",
 	"devDependencies": {
 		"@eslint/js": "^9.33.0",
-		"@frakto/eslint-plugin-frakto": "file:../packages/eslint-plugin-frakto",
 		"comment-parser": "^1.4.1",
 		"eslint": "^9.33.0",
 		"globals": "^16.3.0",
