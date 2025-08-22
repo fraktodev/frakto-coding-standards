@@ -1,0 +1,34 @@
+{
+	"name": "@frakto/frakto-emoji-linter",
+	"version": "1.0.0",
+	"description": "A linter that detects and optionally removes emojis from string/files.",
+	"homepage": "https://frakto.dev",
+	"author": "Frakto Team",
+	"license": "MIT",
+	"type": "module",
+	"keywords": [
+		"emoji",
+		"linter",
+		"frakto"
+	],
+	"bugs": {
+		"url": "https://github.com/fraktodev/frakto-coding-standards/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/fraktodev/frakto-coding-standards.git"
+	},
+	"main": "index.mjs",
+	"bin": {
+		"fraktoEmojiLinter": "./bin/cli.mjs"
+	},
+	"scripts": {
+		"test": "vitest run tests/index.test.mjs"
+	},
+	"dependencies": {
+		"picocolors": "^1.1.1"
+	},
+	"devDependencies": {
+		"vitest": "^3.2.4"
+	}
+}

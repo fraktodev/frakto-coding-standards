@@ -1,5 +1,5 @@
 import { parse } from 'comment-parser';
-import { getDocblock, getDocLoc, createExportValidator } from '../utils.js';
+import { getDocblock, getDocLoc, normalizeTypes, createExportValidator } from '../utils.js';
 
 export default {
 	meta: {
@@ -126,6 +126,21 @@ export default {
 					loc: getDocLoc(sourceCode, docblock, '@throws'),
 					message: `@throws must include a type.`
 				});
+				return;
+			}
+
+			const expectedType = normalizeTypes(type);
+
+			if (expectedType !== type) {
+				context.report({
+					loc: getDocLoc(sourceCode, docblock, `@throws {${type}}`),
+					message: `@throws type is "${type}" but should be "${expectedType}".`,
+					fix: (fixer) => {
+						const fixed = docblock.value.replace(`@throws {${type}}`, `@throws {${expectedType}}`);
+						return fixer.replaceText(docblock, `/*${fixed}*/`);
+					}
+				});
+				type = expectedType;
 				return;
 			}
 

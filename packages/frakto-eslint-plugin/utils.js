@@ -62,9 +62,9 @@ export const getDocLoc = (sourceCode, docblock, identifier) => {
 /**
  * Create an export validator function for docblock rules.
  *
- * @param {Function} validateFn - The validation function to call for matching exports.
+ * @param {function} validateFn - The validation function to call for matching exports.
  *
- * @returns {Function}
+ * @returns {function}
  */
 export const createExportValidator = (validateFn) => {
 	return (node) => {
@@ -85,4 +85,45 @@ export const createExportValidator = (validateFn) => {
 			}
 		}
 	};
+};
+
+/**
+ * Normalize types to their preferred alternatives.
+ * Handles both common types (String -> string) and forbidden types (* -> any).
+ *
+ * @param {string} type - The type to normalize.
+ *
+ * @returns {string}
+ */
+export const normalizeTypes = (type) => {
+	const lowerType = type.toLowerCase();
+
+	// Handle forbidden types first
+	if (['*', 'mixed'].includes(lowerType)) {
+		return 'any';
+	}
+
+	if (['undefined', 'null'].includes(lowerType)) {
+		return 'void';
+	}
+
+	if ('array' === lowerType) {
+		return 'any[]';
+	}
+
+	// Handle common types with incorrect casing
+	/* eslint-disable @typescript-eslint/naming-convention */
+	const commonTypes = {
+		Error: 'error',
+		String: 'string',
+		Number: 'number',
+		Boolean: 'boolean',
+		Function: 'function',
+		Object: 'object',
+		Void: 'void',
+		Any: 'any'
+	};
+	/* eslint-enable @typescript-eslint/naming-convention */
+
+	return commonTypes[type] || type;
 };

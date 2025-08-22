@@ -2,7 +2,7 @@
 
 ### Workspace Context
 
-This is a monorepo containing Frakto's coding standards and linting tools for multiple languages (JavaScript/TypeScript, PHP, HTML, CSS). The repository provides standardized formatting and linting configurations that can be used by the Frakto Code Engine VS Code extension.
+This is a monorepo containing Frakto's coding standards and linting tools for multiple languages (JavaScript, TypeScript, PHP, HTML, CSS, JSON, Markdown and others). The repository provides standardized formatting and linting configurations that can be used by the Frakto Code Engine VS Code extension.
 
 ### Role Assumed
 

@@ -1,15 +1,14 @@
 import { defineConfig } from 'eslint/config';
-import fraktoLint from '@frakto/eslint-plugin-frakto';
+import frakto from '@frakto/frakto-eslint-plugin';
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export default defineConfig([
 	{
 		files: ['**/*.{js,mjs,cjs}'],
-		plugins: { js, tseslint, 'frakto-lint': fraktoLint },
-		extends: ['js/recommended', 'tseslint/recommended', 'frakto-lint/recommended-js'],
+		plugins: { js, tseslint, frakto },
+		extends: ['js/recommended', 'tseslint/recommended', 'frakto/recommended-js'],
 		languageOptions: {
 			globals: globals.browser,
 			ecmaVersion: 'latest',

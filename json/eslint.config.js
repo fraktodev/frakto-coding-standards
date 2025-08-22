@@ -1,5 +1,5 @@
 import { defineConfig } from 'eslint/config';
-import fraktoLint from '@frakto/eslint-plugin-frakto';
+import frakto from '@frakto/frakto-eslint-plugin';
 import packageJson from 'eslint-plugin-package-json';
 import jsoncParser from 'jsonc-eslint-parser';
 
@@ -7,8 +7,8 @@ import jsoncParser from 'jsonc-eslint-parser';
 export default defineConfig([
 	{
 		files: ['**/package.json'],
-		plugins: { 'package-json': packageJson, 'frakto-lint': fraktoLint },
-		extends: ['package-json/recommended', 'frakto-lint/recommended-pkg'],
+		plugins: { 'package-json': packageJson, frakto },
+		extends: ['package-json/recommended', 'frakto/recommended-pkg'],
 		languageOptions: {
 			parser: jsoncParser
 		}

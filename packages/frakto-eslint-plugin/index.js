@@ -56,7 +56,7 @@ const commonRules = {
 
 export default {
 	meta: {
-		name: 'eslint-plugin-frakto-lint',
+		name: 'frakto-eslint-plugin',
 		version: '1.0.0'
 	},
 	rules: {
@@ -79,35 +79,35 @@ export default {
 		'recommended-js': {
 			rules: {
 				...commonRules,
-				'frakto-lint/align-declarations': 'error',
-				'frakto-lint/separate-control-keywords': 'error',
-				'frakto-lint/no-block-comments': 'error',
-				'frakto-lint/no-orphaned-docblocks': 'error',
-				'frakto-lint/require-docblock': 'error',
-				'frakto-lint/docblock-no-examples': 'error',
-				'frakto-lint/docblock-validate-description': 'error',
-				'frakto-lint/docblock-validate-params-js': 'error',
-				'frakto-lint/docblock-validate-throws': 'error',
-				'frakto-lint/docblock-validate-returns': 'error',
-				'frakto-lint/docblock-validate-tag-order': 'error',
-				'frakto-lint/docblock-validate-spacing': 'error'
+				'frakto/align-declarations': 'error',
+				'frakto/separate-control-keywords': 'error',
+				'frakto/no-block-comments': 'error',
+				'frakto/no-orphaned-docblocks': 'error',
+				'frakto/require-docblock': 'error',
+				'frakto/docblock-no-examples': 'error',
+				'frakto/docblock-validate-description': 'error',
+				'frakto/docblock-validate-params-js': 'error',
+				'frakto/docblock-validate-throws': 'error',
+				'frakto/docblock-validate-returns': 'error',
+				'frakto/docblock-validate-tag-order': 'error',
+				'frakto/docblock-validate-spacing': 'error'
 			}
 		},
 		'recommended-ts': {
 			rules: {
 				...commonRules,
-				'frakto-lint/align-declarations': 'error',
-				'frakto-lint/separate-control-keywords': 'error',
-				'frakto-lint/no-block-comments': 'error',
-				'frakto-lint/no-orphaned-docblocks': 'error',
-				'frakto-lint/require-docblock': 'error',
-				'frakto-lint/docblock-no-examples': 'error',
-				'frakto-lint/docblock-no-returns': 'error',
-				'frakto-lint/docblock-validate-description': 'error',
-				'frakto-lint/docblock-validate-params-ts': 'error',
-				'frakto-lint/docblock-validate-throws': 'error',
-				'frakto-lint/docblock-validate-tag-order': 'error',
-				'frakto-lint/docblock-validate-spacing': 'error'
+				'frakto/align-declarations': 'error',
+				'frakto/separate-control-keywords': 'error',
+				'frakto/no-block-comments': 'error',
+				'frakto/no-orphaned-docblocks': 'error',
+				'frakto/require-docblock': 'error',
+				'frakto/docblock-no-examples': 'error',
+				'frakto/docblock-no-returns': 'error',
+				'frakto/docblock-validate-description': 'error',
+				'frakto/docblock-validate-params-ts': 'error',
+				'frakto/docblock-validate-throws': 'error',
+				'frakto/docblock-validate-tag-order': 'error',
+				'frakto/docblock-validate-spacing': 'error'
 			}
 		},
 		'recommended-pkg': {
@@ -125,10 +125,12 @@ export default {
 							'displayName',
 							'productName',
 							'version',
+							'private',
 							'description',
 							'homepage',
 							'author',
 							'license',
+							'type',
 							'types',
 							'typings',
 							'keywords',
@@ -144,8 +146,6 @@ export default {
 							'directories',
 							'files',
 							'workspaces',
-							'type',
-							'private',
 							'publishConfig',
 							'scripts',
 							'config',
