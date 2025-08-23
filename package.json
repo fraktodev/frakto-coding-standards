@@ -1,28 +1,29 @@
 {
-  "name": "@frakto/coding-standards",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Frakto coding standards for various languages.",
-  "author": "Frakto Team",
-  "license": "MIT",
-  "type": "module",
-  "bin": {
-    "fraktoAudit": "cli.mjs"
-  },
-  "dependencies": {
-    "@frakto/frakto-emoji-linter": "file:packages/frakto-emoji-linter",
-    "@frakto/frakto-eslint-plugin": "file:packages/frakto-eslint-plugin",
-    "picocolors": "^1.1.1"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.33.0",
-    "comment-parser": "^1.4.1",
-    "eslint": "^9.33.0",
-    "eslint-plugin-package-json": "^0.54.0",
-    "globals": "^16.3.0",
-    "jsonc-eslint-parser": "^2.4.0",
-    "prettier": "^3.3.3",
-    "typescript-eslint": "^8.39.1",
-    "vitest": "^3.2.4"
-  }
+	"name": "@frakto/coding-standards",
+	"version": "1.0.0",
+	"private": true,
+	"description": "Frakto coding standards for various languages.",
+	"author": "Frakto Team",
+	"license": "MIT",
+	"type": "module",
+	"main": "./src/index.mjs",
+	"bin": {
+		"fraktoAudit": "./bin/cli.mjs"
+	},
+	"dependencies": {
+		"@frakto/frakto-emoji-linter": "file:packages/frakto-emoji-linter",
+		"@frakto/frakto-eslint-plugin": "file:packages/frakto-eslint-plugin",
+		"picocolors": "^1.1.1"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.33.0",
+		"comment-parser": "^1.4.1",
+		"eslint": "^9.33.0",
+		"eslint-plugin-package-json": "^0.54.0",
+		"globals": "^16.3.0",
+		"jsonc-eslint-parser": "^2.4.0",
+		"prettier": "^3.3.3",
+		"typescript-eslint": "^8.39.1",
+		"vitest": "^3.2.4"
+	}
 }

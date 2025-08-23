@@ -2,44 +2,6 @@
 import process from 'node:process';
 
 /**
- * Prepares diagnostics for the response payload.
- *
- * @param {string} linter - The linter used.
- * @param {object} data   - The diagnostics data.
- * @param {string} source - The source of the diagnostics.
- *
- * @returns {string[]}
- */
-export const parseDiagnostics = (linter, data, source) => {
-	if ('eslint' === linter) {
-		return data.flatMap((result) =>
-			result.messages.map((diagnostic) => ({
-				line: diagnostic.line || 0,
-				column: diagnostic.column || 0,
-				endLine: diagnostic.endLine || 0,
-				endColumn: diagnostic.endColumn || 0,
-				type: 2 === diagnostic.severity ? 'ERROR' : 'WARNING',
-				message: diagnostic.message || '',
-				source: source,
-				code: diagnostic.ruleId || 'ESLint JS'
-			}))
-		);
-	}
-	else if ('emoji' === linter) {
-		return data.map((diagnostic) => ({
-			line: diagnostic.line || 0,
-			column: diagnostic.column || 0,
-			endLine: diagnostic.endLine || 0,
-			endColumn: diagnostic.endColumn || 0,
-			type: 'ERROR',
-			message: `Emoji detected: ${diagnostic.emoji}`,
-			source: source,
-			code: 'no-emoji'
-		}));
-	}
-};
-
-/**
  * Throws an error with the specified message.
  *
  * @param {string} message - The error message to throw.

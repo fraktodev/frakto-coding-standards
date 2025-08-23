@@ -2,79 +2,111 @@
 import fs from 'fs';
 
 /**
- * Detects emojis in a string.
+ * Frakto Emoji Linter a class for linting and fixing emoji usage in text.
  *
- * @param {string} content - The string to lint.
- *
- * @returns {any[]}
+ * @class FraktoEmojiLinter
  */
-const lintString = (content) => {
-	let match;
-	const emojiRegex = /\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu;
-	const matches    = [];
+class FraktoEmojiLinter {
+	static severities = {
+		error: 'error',
+		warning: 'warning',
+		info: 'info'
+	};
 
-	while (null !== (match = emojiRegex.exec(content))) {
-		const index     = match.index;
-		const endIndex  = match.index + match[0].length - 1;
-		const line      = content.substring(0, index).split('\n').length;
-		const endLine   = content.substring(0, endIndex).split('\n').length;
-		const column    = index - content.lastIndexOf('\n', index - 1);
-		const endColumn = endIndex - content.lastIndexOf('\n', endIndex - 1);
+	/**
+	 * Constructor for FraktoEmojiLinter.
+	 *
+	 * @param {object} config - Configuration options for the linter.
+	 *
+	 * @returns {void}
+	 */
+	constructor(config) {
+		const validValues = Object.values(FraktoEmojiLinter.severities);
 
-		matches.push({
-			index,
-			emoji: match[0],
-			line,
-			column,
-			endLine,
-			endColumn
+		this.whitelist = config.whitelist || [];
+		this.message = config.message || 'Emoji usage detected - emojis are not allowed in code';
+		this.severity = validValues.includes(config.severity) ? config.severity : 'error';
+	}
+
+	/**
+	 * Lint a string for emoji usage.
+	 *
+	 * @param {string} content - The content to lint.
+	 *
+	 * @returns {object[]}
+	 */
+	detectEmojis(content) {
+		let match;
+		const emojiRegex = /\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu;
+		const matches    = [];
+
+		while (null !== (match = emojiRegex.exec(content))) {
+			const emoji = match[0];
+
+			if (this.whitelist.includes(emoji)) {
+				continue;
+			}
+
+			const index     = match.index;
+			const endIndex  = match.index + match[0].length - 1;
+			const line      = content.substring(0, index).split('\n').length;
+			const endLine   = content.substring(0, endIndex).split('\n').length;
+			const column    = index - content.lastIndexOf('\n', index - 1);
+			const endColumn = endIndex - content.lastIndexOf('\n', endIndex - 1);
+
+			matches.push({
+				index,
+				emoji,
+				line,
+				column,
+				endLine,
+				endColumn,
+				message: this.message,
+				severity: this.severity
+			});
+		}
+
+		return matches;
+	}
+
+	/**
+	 * Fix emoji usage in a string.
+	 *
+	 * @param {string} content - The content to fix.
+	 *
+	 * @returns {string}
+	 */
+	removeEmojis(content) {
+		const emojiRegex = /\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu;
+		return content.replace(emojiRegex, (match) => {
+			return this.whitelist.includes(match) ? match : '';
 		});
 	}
 
-	return matches;
-};
+	/**
+	 * Lint a file for emoji usage.
+	 *
+	 * @param {string} filePath - The path to the file to lint.
+	 *
+	 * @returns {object[]}
+	 */
+	lintFile(filePath) {
+		const content = fs.readFileSync(filePath, 'utf8');
+		return this.detectEmojis(content);
+	}
 
-/**
- * Lints a file for emojis.
- *
- * @param {string} filePath - The path to the file to lint.
- *
- * @returns {lintString}
- */
-const lintFile = (filePath) => {
-	const content = fs.readFileSync(filePath, 'utf8');
-	return lintString(content);
-};
+	/**
+	 * Fix emoji usage in a file.
+	 *
+	 * @param {string} filePath - The path to the file to fix.
+	 *
+	 * @returns {void}
+	 */
+	fixFile(filePath) {
+		const content = fs.readFileSync(filePath, 'utf8');
+		const fixed   = this.removeEmojis(content);
+		fs.writeFileSync(filePath, fixed, 'utf8');
+	}
+}
 
-/**
- * Fixes a string by removing emojis.
- *
- * @param {string} content - The string to fix.
- *
- * @returns {string}
- */
-const fixString = (content) => {
-	return content.replace(/\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu, '');
-};
-
-/**
- * Fixes a file by removing emojis.
- *
- * @param {string} filePath - The path to the file to fix.
- *
- * @returns {void}
- */
-const fixFile = (filePath) => {
-	const content = fs.readFileSync(filePath, 'utf8');
-	const fixed   = fixString(content);
-	fs.writeFileSync(filePath, fixed, 'utf8');
-};
-
-// Export
-const fraktoEmojiLinter = lintString;
-fraktoEmojiLinter.lintString = lintString;
-fraktoEmojiLinter.lintFile = lintFile;
-fraktoEmojiLinter.fixString = fixString;
-fraktoEmojiLinter.fixFile = fixFile;
-
-export default fraktoEmojiLinter;
+export default FraktoEmojiLinter;

@@ -2,23 +2,18 @@
 /* eslint-disable no-console */
 
 // Dependencies
-import { readFileSync, writeFileSync } from 'node:fs';
-import { fraktoCommonAudit } from './common/index.mjs';
-import { fraktoHTMLAudit } from './html/index.mjs';
-import { fraktoJSAudit } from './js/index.mjs';
-import { fraktoJSONAudit } from './json/index.mjs';
-import { fraktoMDAudit } from './md/index.mjs';
-import { fraktoTSAudit } from './ts/index.mjs';
-import process from 'node:process';
-import path from 'node:path';
 import pc from 'picocolors';
+import path from 'node:path';
+import process from 'node:process';
+import fraktoAuditor from '../src/index.mjs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 // CLI
 (async () => {
 	const args = process.argv.slice(2);
 
 	if (2 > args.length) {
-		console.error(pc.red('Usage: fraktoJSAudit <mode> <filePath>'));
+		console.error(pc.red('Usage: fraktoAudit <mode> <filePath>'));
 		console.error(pc.yellow('mode: format | lint | both'));
 		process.exit(1);
 	}
@@ -32,56 +27,45 @@ import pc from 'picocolors';
 
 	try {
 		const content = readFileSync(filePath, 'utf8');
-
-		// Detect language from file extension
-		const ext = path.extname(filePath).toLowerCase();
+		const ext     = path.extname(filePath).toLowerCase();
 
 		/* eslint-disable @typescript-eslint/naming-convention */
 		const languageMap = {
 			'.js': 'javascript',
 			'.mjs': 'javascript',
-			'.jsx': 'javascript',
+			'.cjs': 'javascript',
 			'.ts': 'typescript',
-			'.tsx': 'typescript',
+			'.mts': 'typescript',
+			'.cts': 'typescript',
 			'.html': 'html',
 			'.htm': 'html',
 			'.json': 'json',
+			'.jsonc': 'jsonc',
 			'.md': 'markdown',
-			'.markdown': 'markdown'
+			'.markdown': 'markdown',
+			'.php': 'php',
+			'.phtml': 'php',
+			'.css': 'css',
+			'.scss': 'scss',
+			'.sass': 'scss',
+			'.yaml': 'yaml',
+			'.yml': 'yaml'
 		};
 		/* eslint-enable @typescript-eslint/naming-convention */
 
-		const language = languageMap[ext] || 'common';
-
+		const language = languageMap[ext];
 		const request  = {
 			mode,
 			content,
 			filePath: path.resolve(filePath),
 			language,
+			fileName: path.basename(filePath),
 			linterStandard: 'Frakto',
 			workspacePath: path.dirname(path.resolve(filePath))
 		};
 
-		let response;
-		switch (request.language) {
-			case 'html':
-				response = await fraktoHTMLAudit(request, path.join(process.cwd(), 'html'));
-				break;
-			case 'javascript':
-				response = await fraktoJSAudit(request, path.join(process.cwd(), 'js'));
-				break;
-			case 'json':
-				response = await fraktoJSONAudit(request, path.join(process.cwd(), 'json'));
-				break;
-			case 'markdown':
-				response = await fraktoMDAudit(request, path.join(process.cwd(), 'md'));
-				break;
-			case 'typescript':
-				response = await fraktoTSAudit(request, path.join(process.cwd(), 'ts'));
-				break;
-			default:
-				response = await fraktoCommonAudit(request, path.join(process.cwd(), 'common'));
-		}
+		const auditor  = new fraktoAuditor();
+		const response = await auditor.audit(language, request);
 
 		if (['format', 'both'].includes(mode) && null !== response.formatted) {
 			if (response.formatted === content) {

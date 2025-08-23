@@ -2,9 +2,9 @@
 /* eslint-disable no-console */
 
 // Dependencies
-import fraktoEmojiLinter from '../index.mjs';
-import process from 'node:process';
 import pc from 'picocolors';
+import process from 'node:process';
+import fraktoEmojiLinter from '../index.mjs';
 
 const args    = process.argv.slice(2);
 const fixMode = args.includes('--fix');
@@ -16,16 +16,20 @@ if (!files.length) {
 }
 
 for (const file of files) {
-	const results = fraktoEmojiLinter.lintFile(file);
+	const emoji   = new fraktoEmojiLinter({ severity: 'warning' });
+	const results = emoji.lintFile(file);
 
 	if (results.length) {
-		console.log(`\n${pc.yellow(file)}: Found ${pc.red(results.length)} emoji(s):`);
-		results.forEach((r) => {
-			console.log(`  - "${pc.cyan(r.emoji)}" ${pc.dim(`(line ${r.line}, column ${r.column})`)}`);
+		console.log(`\n${pc.cyan(file)}: Found ${pc.red(results.length)} emoji(s):`);
+		results.forEach((result) => {
+			const type = 'error' === result.severity ? pc.red('Error') : pc.yellow('Warning');
+			console.log(
+				`  - ${type}: ${pc.cyan(result.emoji)} ${pc.dim(`(found on line ${result.line}, column ${result.column})`)}`
+			);
 		});
 
 		if (fixMode) {
-			fraktoEmojiLinter.fixFile(file);
+			emoji.fixFile(file);
 			console.log(pc.green(`Fixed: removed emojis from ${file}`));
 		}
 	}

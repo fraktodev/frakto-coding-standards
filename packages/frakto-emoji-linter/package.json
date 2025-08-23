@@ -23,7 +23,7 @@
 		"fraktoEmojiLinter": "./bin/cli.mjs"
 	},
 	"scripts": {
-		"test": "vitest run tests/index.test.mjs"
+		"test": "vitest run tests/index.test.mjs --reporter=verbose --no-coverage"
 	},
 	"dependencies": {
 		"picocolors": "^1.1.1"
