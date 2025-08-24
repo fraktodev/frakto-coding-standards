@@ -23,74 +23,69 @@ export default {
 		 * @returns {any[]}
 		 */
 		const getNodeParams = (node) => {
+			if (!node) return [];
+
+			if (
+				'FunctionDeclaration' === node.type ||
+				'FunctionExpression' === node.type ||
+				'ArrowFunctionExpression' === node.type
+			) {
+				return node.params || [];
+			}
+
 			if ('MethodDefinition' === node.type) {
 				return node.value?.params || [];
 			}
 
-			// Handle ExportNamedDeclaration and ExportDefaultDeclaration
+			if ('VariableDeclarator' === node.type && node.init) {
+				return getNodeParams(node.init);
+			}
+
 			if ('ExportNamedDeclaration' === node.type || 'ExportDefaultDeclaration' === node.type) {
-				const declaration = node.declaration;
-				if ('VariableDeclaration' === declaration?.type) {
-					// Find the arrow function in the variable declaration
-					const arrowFunction = declaration.declarations?.find(
-						(declarator) => 'ArrowFunctionExpression' === declarator.init?.type
-					)?.init;
-					return arrowFunction?.params || [];
-				}
-				if ('ArrowFunctionExpression' === declaration?.type) {
-					return declaration.params || [];
+				if (node.declaration) {
+					return getNodeParams(node.declaration);
 				}
 			}
 
-			return node.params || [];
-		};
-
-		/**
-		 * Get the value of a specific parameter from a node.
-		 *
-		 * @param {ASTNode} node - The node to get the parameter value from.
-		 *
-		 * @returns {any}
-		 */
-		const getParamValue = (node) => {
-			if (!node) return undefined;
-
-			if ('ArrayExpression' === node.type) {
-				return node.elements.map((el) => {
-					if (!el) return null;
-					if ('Literal' === el.type) return el.value;
-					if ('Identifier' === el.type) return el.name;
-					return null;
-				});
+			if ('VariableDeclaration' === node.type && node.declarations) {
+				for (const declarator of node.declarations) {
+					const params = getNodeParams(declarator);
+					if (params.length) return params;
+				}
 			}
 
-			if ('Literal' === node.type) return node.value;
-			if ('Identifier' === node.type) return node.name;
+			if (node.params) return node.params;
 
-			return undefined;
+			return [];
 		};
 
 		/**
-		 * Get the value of a specific parameter from a node.
+		 * Returns the type of a default value node.
 		 *
-		 * @param {ASTNode} value - The node to get the parameter value from.
+		 * @param {ASTNode} node - The right side of a parameter default value.
 		 *
 		 * @returns {string}
 		 */
-		const getValueType = (value) => {
-			if ('string' === typeof value) return 'string';
-			if ('number' === typeof value) return 'number';
-			if ('boolean' === typeof value) return 'boolean';
-			if ('function' === typeof value) return 'function';
-			if (Array.isArray(value)) {
-				if (0 === value.length) return 'any[]';
-				const firstElement = value[0];
-				const elementType  = getValueType(firstElement);
-				return `${elementType}[]`;
+		const getDefaultValueType = (node) => {
+			if (!node) return 'undefined';
+
+			if ('ArrayExpression' === node.type) return 'array';
+			if ('ObjectExpression' === node.type) return 'object';
+			if ('Literal' === node.type) {
+				if (null === node.value) return 'null';
+				return typeof node.value;
 			}
-			if ('object' === typeof value) return 'object';
-			if ('undefined' === typeof value) return 'void';
-			if (null === value) return 'void';
+			if ('Identifier' === node.type) return 'identifier';
+			if ('FunctionExpression' === node.type || 'ArrowFunctionExpression' === node.type) return 'function';
+			if ('UnaryExpression' === node.type) return getDefaultValueType(node.argument);
+			if ('BinaryExpression' === node.type) {
+				const leftType  = getDefaultValueType(node.left);
+				const rightType = getDefaultValueType(node.right);
+				if (leftType === rightType) return leftType;
+				return 'any';
+			}
+			if ('CallExpression' === node.type) return 'functionCall';
+
 			return 'any';
 		};
 
@@ -134,32 +129,6 @@ export default {
 				.split('\n')
 				.filter((line) => line.includes('@param'))
 				.map((line) => line.trim().replace(/^\* ?/, ''));
-		};
-
-		/**
-		 * Checks if two arrays match.
-		 *
-		 * @param {any} stringValue - The string value to compare.
-		 * @param {any} actualValue - The actual value to compare against.
-		 *
-		 * @throws {error} If the comparison fails.
-		 * @returns {boolean}
-		 */
-		const arraysMatch = (stringValue, actualValue) => {
-			try {
-				const parsed = JSON.parse(stringValue);
-
-				if (!Array.isArray(parsed) || !Array.isArray(actualValue)) return false;
-
-				if (parsed.length !== actualValue.length) return false;
-
-				return parsed.every((val, i) => val === actualValue[i]);
-				/* eslint-disable @typescript-eslint/no-unused-vars */
-			}
-			catch (e) {
-				return false;
-				/* eslint-enable @typescript-eslint/no-unused-vars */
-			}
 		};
 
 		/**
@@ -214,11 +183,11 @@ export default {
 
 			if (!parsed) return;
 
-			const tags      = parsed[0]?.tags ?? [];
-			const paramTags = tags.filter((tag) => 'param' === tag.tag);
-			const params    = getNodeParams(node);
+			const tags       = parsed[0]?.tags ?? [];
+			const docParams  = tags.filter((tag) => 'param' === tag.tag);
+			const realParams = getNodeParams(node);
 
-			if (0 === params.length && 0 < paramTags.length) {
+			if (0 === realParams.length && 0 < docParams.length) {
 				context.report({
 					loc: docblock.loc,
 					message: 'Declaration has no parameters but @param tags are present in docblock.'
@@ -226,7 +195,7 @@ export default {
 				return;
 			}
 
-			if (0 < params.length && 0 === paramTags.length) {
+			if (0 < realParams.length && 0 === docParams.length) {
 				context.report({
 					loc: docblock.loc,
 					message: 'Declaration has parameters but no @param tags in the docblock.'
@@ -234,7 +203,7 @@ export default {
 				return;
 			}
 
-			if (params.length !== paramTags.length) {
+			if (realParams.length !== docParams.length) {
 				context.report({
 					loc: docblock.loc,
 					message: 'Number of parameters in declaration does not match number of @param tags in docblock.'
@@ -242,8 +211,10 @@ export default {
 				return;
 			}
 
-			paramTags.forEach((tag, index) => {
-				let { type, name, optional, default: def, description } = tag;
+			docParams.forEach((tag, index) => {
+				let { type, name, description, optional: docIsOptional } = tag;
+				const realParam      = realParams[index];
+				const realIsOptional = Boolean(realParam?.right);
 
 				if (!type) {
 					context.report({
@@ -253,12 +224,12 @@ export default {
 					return;
 				}
 
-				const expectedType = normalizeTypes(type);
+				const expectedType = realIsOptional ? getDefaultValueType(realParam.right) : normalizeTypes(type);
 
 				if (expectedType !== type) {
 					context.report({
 						loc: getDocLoc(sourceCode, docblock, `@param {${type}}`),
-						message: `@param "${name}" type is "${type}" but should be "${expectedType}".`,
+						message: `@param type is "${type}" but should be "${expectedType}".`,
 						fix: (fixer) => {
 							const fixed = docblock.value.replace(`@param {${type}}`, `@param {${expectedType}}`);
 							return fixer.replaceText(docblock, `/*${fixed}*/`);
@@ -276,13 +247,12 @@ export default {
 					return;
 				}
 
-				const realParam    = params[index];
-				const expectedName = realParam?.left?.name || realParam?.name || '';
+				const expectedName = realIsOptional ? realParam?.left?.name : realParam?.name;
 
 				if (expectedName !== name) {
 					context.report({
 						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name}`),
-						message: `@param name "${name}" does not match declaration parameter "${expectedName}".`,
+						message: `@param "${name}" does not match declaration parameter "${expectedName}".`,
 						fix: (fixer) => {
 							const fixed = docblock.value.replace(`@param {${type}} ${name}`, `@param {${type}} ${expectedName}`);
 							return fixer.replaceText(docblock, `/*${fixed}*/`);
@@ -292,18 +262,27 @@ export default {
 					return;
 				}
 
+				if (docIsOptional) {
+					context.report({
+						loc: getDocLoc(sourceCode, docblock, `@param {${type}}`),
+						message: `@param should not be documented as optional with a default value. Only use the parameter name "${name}", without brackets or default assignment.`
+					});
+					name = expectedName;
+					return;
+				}
+
 				if (!description) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param`),
-						message: `@param "${name}" must include a description.`
+						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name}`),
+						message: `@param must include a description.`
 					});
 					return;
 				}
 
 				if (!description.startsWith('-')) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name}`),
-						message: `@param "${name}" description must start with a dash.`,
+						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name} ${description}`),
+						message: `@param description must start with a dash.`,
 						fix: (fixer) => {
 							const fixed = docblock.value.replace(description, `- ${description}`);
 							return fixer.replaceText(docblock, `/*${fixed}*/`);
@@ -312,16 +291,45 @@ export default {
 					return;
 				}
 
+				if (realIsOptional && !description.startsWith('- Optional.')) {
+					context.report({
+						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name} ${description}`),
+						message: `@param description must start with a dash and include "Optional."`,
+						fix: (fixer) => {
+							const descNoDash = description.replace(/^[-\s]+/, '');
+							const fixed      = docblock.value.replace(description, `- Optional. ${descNoDash}`);
+							return fixer.replaceText(docblock, `/*${fixed}*/`);
+						}
+					});
+					return;
+				}
+
 				if (!description.endsWith('.')) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name}`),
-						message: `@param "${name}" description must end with a period.`,
+						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name} ${description}`),
+						message: `@param description must end with a period.`,
 						fix: (fixer) => {
 							const fixed = docblock.value.replace(description, `${description}.`);
 							return fixer.replaceText(docblock, `/*${fixed}*/`);
 						}
 					});
 					return;
+				}
+
+				if ('array' === type || 'object' === type) {
+					const arrayKeywords  = ['empty array', 'array of', 'list of', 'collection of'];
+					const objectKeywords = ['empty object', 'object with', 'object containing', 'hash of', 'map of'];
+					const typeKeywords   = 'array' === type ? arrayKeywords : objectKeywords;
+					const hasKeywords    = typeKeywords.some((keyword) => description.toLowerCase().includes(keyword.toLowerCase()));
+
+					if (!hasKeywords) {
+						const keywordsList = typeKeywords.map((keyword) => `"${keyword}"`).join(', ');
+						context.report({
+							loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name} ${description}`),
+							message: `@param with type "${type}" must describe its content using one of these keywords: ${keywordsList}.`
+						});
+						return;
+					}
 				}
 
 				if (10 > description.length) {
@@ -339,60 +347,9 @@ export default {
 					});
 					return;
 				}
-
-				const isOptional = Boolean(realParam?.right);
-
-				if (isOptional) {
-					const expectedDefault = getParamValue(realParam.right);
-					const expectedType    = getValueType(expectedDefault);
-					const normalizedDef   = 'true' === def ? true : 'false' === def ? false : def;
-
-					if (expectedType !== type) {
-						context.report({
-							loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name}`),
-							message: `@param "${name}" type is "${type}" but default value implies "${expectedType}".`,
-							fix: (fixer) => {
-								const fixed = docblock.value.replace(`@param {${type}} ${name}`, `@param {${expectedType}} ${name}`);
-								return fixer.replaceText(docblock, `/*${fixed}*/`);
-							}
-						});
-						type = expectedType;
-						return;
-					}
-
-					if (!optional || (!Array.isArray(expectedDefault) && expectedDefault !== normalizedDef)) {
-						context.report({
-							loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name}`),
-							message: `@param "${name}" is optional but does not match default value "${expectedDefault}".`,
-							fix: (fixer) => {
-								const fixed = docblock.value.replace(
-									`@param {${type}} ${name}`,
-									`@param {${type}} [${name}=${expectedDefault}]`
-								);
-								return fixer.replaceText(docblock, `/*${fixed}*/`);
-							}
-						});
-						return;
-					}
-
-					if (!optional || (Array.isArray(expectedDefault) && !arraysMatch(def, expectedDefault))) {
-						context.report({
-							loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name}`),
-							message: `@param "${name}" is optional and must match default value "[${expectedDefault}]".`,
-							fix: (fixer) => {
-								const fixed = docblock.value.replace(
-									`@param {${type}} ${name}`,
-									`@param {${type}} [${name}=[${expectedDefault}]]`
-								);
-								return fixer.replaceText(docblock, `/*${fixed}*/`);
-							}
-						});
-						return;
-					}
-				}
 			});
 
-			const aligned   = getAlignedParams(paramTags);
+			const aligned   = getAlignedParams(docParams);
 			const unaligned = getUnalignedParams(docblock);
 			const areEqual  = aligned.every((line, i) => line === unaligned[i]) && aligned.length === unaligned.length;
 

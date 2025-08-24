@@ -27,8 +27,9 @@ export const getDocblock = (sourceCode, node) => {
 
 	// Handle ExportNamedDeclaration and ExportDefaultDeclaration
 	if ('ExportNamedDeclaration' === node.type || 'ExportDefaultDeclaration' === node.type) {
-		// The docblock should be directly before the export statement
-		return docblock; // Already checked above
+		// For export declarations, the docblock is before the export statement itself
+		// This is already handled by the first getCommentsBefore(node) call above
+		return null;
 	}
 
 	return null;
@@ -107,10 +108,6 @@ export const normalizeTypes = (type) => {
 		return 'void';
 	}
 
-	if ('array' === lowerType) {
-		return 'any[]';
-	}
-
 	// Handle common types with incorrect casing
 	/* eslint-disable @typescript-eslint/naming-convention */
 	const commonTypes = {
@@ -119,6 +116,7 @@ export const normalizeTypes = (type) => {
 		Number: 'number',
 		Boolean: 'boolean',
 		Function: 'function',
+		Array: 'array',
 		Object: 'object',
 		Void: 'void',
 		Any: 'any'

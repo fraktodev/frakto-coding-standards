@@ -66,8 +66,12 @@ export default {
 				return true;
 			}
 
-			// Handle export declarations (e.g., export const)
+			// Handle export declarations (e.g., export const, export default)
 			if ('ExportNamedDeclaration' === node.type && node.declaration) {
+				return isValidDocblockTarget(node.declaration);
+			}
+
+			if ('ExportDefaultDeclaration' === node.type && node.declaration) {
 				return isValidDocblockTarget(node.declaration);
 			}
 

@@ -86,9 +86,8 @@ export default {
 				}
 			}
 			else if ('ExportDefaultDeclaration' === node.type) {
-				// Only check if the default export is an arrow function
-				// Skip object literals, function declarations, classes, etc.
-				if ('ArrowFunctionExpression' === node.declaration?.type) {
+				// Check if the default export is an arrow function or function declaration
+				if ('ArrowFunctionExpression' === node.declaration?.type || 'FunctionDeclaration' === node.declaration?.type) {
 					checkDocblock(node);
 				}
 			}

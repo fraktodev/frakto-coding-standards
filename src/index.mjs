@@ -12,13 +12,17 @@ import { spawn } from 'child_process';
  */
 class FraktoAuditor {
 	/**
-	 * Constructor - Initialize the auditor with tool handlers and language configurations.
+	 * Constructor - Initialize the auditor with tool handlers, language configurations, and ignore patterns.
+	 *
+	 * @param {object} config - Optional. An object containing configuration options.
 	 *
 	 * @returns {void}
 	 */
-	constructor() {
+	constructor(config = { ignoreOnFormat: [], ignoreOnLint: [] }) {
 		this.initializeToolHandlers();
 		this.initializeLanguageConfigs();
+		this.ignoreOnFormat = config.ignoreOnFormat;
+		this.ignoreOnLint = config.ignoreOnLint;
 	}
 
 	/**
@@ -264,7 +268,7 @@ class FraktoAuditor {
 	 * Prepares diagnostics for the response payload.
 	 *
 	 * @param {string} linter - The linter used.
-	 * @param {object} data   - The diagnostics data.
+	 * @param {object} data   - The object containing diagnostics data.
 	 * @param {string} source - The source of the diagnostics.
 	 *
 	 * @returns {string[]|null}
@@ -313,6 +317,23 @@ class FraktoAuditor {
 	}
 
 	/**
+	 * Checks if a file path matches any ignore pattern.
+	 *
+	 * @param {string} mode     - The processing mode.
+	 * @param {string} filePath - The file path to check.
+	 *
+	 * @returns {boolean}
+	 */
+	shouldIgnore(mode, filePath) {
+		if ('format' === mode) {
+			return this.ignoreOnFormat.some((pattern) => new RegExp(pattern).test(filePath));
+		}
+		else if ('lint' === mode) {
+			return this.ignoreOnLint.some((pattern) => new RegExp(pattern).test(filePath));
+		}
+	}
+
+	/**
 	 * Main audit method - processes content for a specific language.
 	 *
 	 * @param {string} language - The language to process.
@@ -356,113 +377,7 @@ class FraktoAuditor {
 
 		return response;
 	}
-
-	/**
-	 * Static method to create and use auditor for JavaScript.
-	 *
-	 * @param {object} request - The request object.
-	 *
-	 * @returns {Promise<object>}
-	 */
-	static async auditJS(request) {
-		const auditor = new FraktoAuditor();
-		return await auditor.audit('javascript', request);
-	}
-
-	/**
-	 * Static method to create and use auditor for TypeScript.
-	 *
-	 * @param {object} request - The request object.
-	 *
-	 * @returns {Promise<object>}
-	 */
-	static async auditTS(request) {
-		const auditor = new FraktoAuditor();
-		return await auditor.audit('typescript', request);
-	}
-
-	/**
-	 * Static method to create and use auditor for JSON.
-	 *
-	 * @param {object} request - The request object.
-	 *
-	 * @returns {Promise<object>}
-	 */
-	static async auditJSON(request) {
-		const auditor = new FraktoAuditor();
-		return await auditor.audit('json', request);
-	}
-
-	/**
-	 * Static method to create and use auditor for Markdown.
-	 *
-	 * @param {object} request - The request object.
-	 *
-	 * @returns {Promise<object>}
-	 */
-	static async auditMD(request) {
-		const auditor = new FraktoAuditor();
-		return await auditor.audit('markdown', request);
-	}
-
-	/**
-	 * Static method to create and use auditor for HTML.
-	 *
-	 * @param {object} request - The request object.
-	 *
-	 * @returns {Promise<object>}
-	 */
-	static async auditHTML(request) {
-		const auditor = new FraktoAuditor();
-		return await auditor.audit('html', request);
-	}
-
-	/**
-	 * Static method to create and use auditor for CSS.
-	 *
-	 * @param {object} request - The request object.
-	 *
-	 * @returns {Promise<object>}
-	 */
-	static async auditCSS(request) {
-		const auditor = new FraktoAuditor();
-		return await auditor.audit('css', request);
-	}
-
-	/**
-	 * Static method to create and use auditor for PHP.
-	 *
-	 * @param {object} request - The request object.
-	 *
-	 * @returns {Promise<object>}
-	 */
-	static async auditPHP(request) {
-		const auditor = new FraktoAuditor();
-		return await auditor.audit('php', request);
-	}
-
-	/**
-	 * Static method to create and use auditor for other languages.
-	 *
-	 * @param {object} request - The request object.
-	 *
-	 * @returns {Promise<object>}
-	 */
-	static async auditCommon(request) {
-		const auditor = new FraktoAuditor();
-		return await auditor.audit('common', request);
-	}
 }
-
-// Export convenience functions for backward compatibility.
-export const fraktoJSAudit = FraktoAuditor.auditJS;
-export const fraktoTSAudit = FraktoAuditor.auditTS;
-export const fraktoJSONAudit = FraktoAuditor.auditJSON;
-export const fraktoMDAudit = FraktoAuditor.auditMD;
-export const fraktoHTMLAudit = FraktoAuditor.auditHTML;
-export const fraktoCSSAudit = FraktoAuditor.auditCSS;
-export const fraktoPHPAudit = FraktoAuditor.auditPHP;
-export const fraktoCommonAudit = FraktoAuditor.auditCommon;
 
 // Export the class itself.
 export default FraktoAuditor;

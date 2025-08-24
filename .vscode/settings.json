@@ -1,4 +1,5 @@
 {
+	// TODO: Remove this, it's a temporary setting while developing.
 	"frakto.enableDiagnostics": true,
 	"frakto.enableFormat": true,
 
