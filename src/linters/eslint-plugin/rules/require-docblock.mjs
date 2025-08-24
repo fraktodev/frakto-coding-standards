@@ -1,4 +1,4 @@
-import { getDocblock } from '../utils.js';
+import { getDocblock } from '../utils.mjs';
 
 export default {
 	meta: {

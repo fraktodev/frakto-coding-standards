@@ -1,5 +1,5 @@
 import { parse } from 'comment-parser';
-import { getDocblock, createExportValidator } from '../utils.js';
+import { getDocblock, createExportValidator } from '../utils.mjs';
 
 export default {
 	meta: {

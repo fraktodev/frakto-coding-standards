@@ -1,12 +1,12 @@
 // Dependencies
-import fs from 'fs';
+import fs from 'node:fs';
 
 /**
  * Frakto Emoji Linter a class for linting and fixing emoji usage in text.
  *
- * @class FraktoEmojiLinter
+ * @class EmojiLinter
  */
-class FraktoEmojiLinter {
+class EmojiLinter {
 	static severities = {
 		error: 'error',
 		warning: 'warning',
@@ -16,12 +16,12 @@ class FraktoEmojiLinter {
 	/**
 	 * Constructor for FraktoEmojiLinter.
 	 *
-	 * @param {object} config - Configuration options for the linter.
+	 * @param {object} config - The object with configuration options for the linter.
 	 *
 	 * @returns {void}
 	 */
 	constructor(config) {
-		const validValues = Object.values(FraktoEmojiLinter.severities);
+		const validValues = Object.values(EmojiLinter.severities);
 
 		this.whitelist = config.whitelist || [];
 		this.message = config.message || 'Emoji usage detected - emojis are not allowed in code';
@@ -109,4 +109,4 @@ class FraktoEmojiLinter {
 	}
 }
 
-export default FraktoEmojiLinter;
+export default EmojiLinter;

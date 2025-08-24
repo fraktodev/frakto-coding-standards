@@ -1,8 +1,10 @@
-import { defineConfig } from 'eslint/config';
-import frakto from '@frakto/frakto-eslint-plugin';
+// Dependencies
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import frakto from '../../linters/eslint-plugin/index.mjs';
+
+import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
 	{

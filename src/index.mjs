@@ -2,7 +2,7 @@
 import path from 'node:path';
 import prettier from 'prettier';
 import process from 'node:process';
-import fraktoEmojiLinter from '@frakto/frakto-emoji-linter';
+import emojiLinter from './linters/emoji-linter/index.mjs';
 
 import { ESLint } from 'eslint';
 import { spawn } from 'child_process';
@@ -36,13 +36,13 @@ class FraktoAuditor {
 			 * Formats code using Prettier with language-specific configurations.
 			 *
 			 * @param {string} content  - The content to format.
-			 * @param {object} request  - The request object.
+			 * @param {object} request  - The object containing request details.
 			 * @param {string} langPath - The path to the configuration files.
 			 *
 			 * @returns {Promise<string>}
 			 */
 			prettier: async (content, request, langPath) => {
-				const configPath = path.join(process.cwd(), langPath, 'prettier.config.js');
+				const configPath = path.join(process.cwd(), langPath, 'prettier.config.mjs');
 				const configFile = await prettier.resolveConfig(configPath);
 				const result     = await prettier.format(content, { filepath: request.filePath, ...configFile });
 
@@ -53,7 +53,7 @@ class FraktoAuditor {
 			 * Formats code using ESLint's auto-fix capabilities.
 			 *
 			 * @param {string} content  - The content to format.
-			 * @param {object} request  - The request object.
+			 * @param {object} request  - The object containing request details.
 			 * @param {string} langPath - The path to the configuration files.
 			 *
 			 * @returns {Promise<string>}
@@ -63,7 +63,7 @@ class FraktoAuditor {
 					return;
 				}
 
-				const configFile = path.join(process.cwd(), langPath, 'eslint.config.js');
+				const configFile = path.join(process.cwd(), langPath, 'eslint.config.mjs');
 				const eslint     = new ESLint({ cwd: request.workspacePath, overrideConfigFile: configFile, fix: true });
 				const result     = await eslint.lintText(content, { filePath: request.filePath });
 
@@ -88,7 +88,7 @@ class FraktoAuditor {
 			 * Lints code using ESLint to detect potential errors and style violations.
 			 *
 			 * @param {string} content  - The content to lint.
-			 * @param {object} request  - The request object.
+			 * @param {object} request  - The object containing request details.
 			 * @param {string} langPath - The path to the configuration files.
 			 *
 			 * @returns {Promise<object>}
@@ -99,7 +99,7 @@ class FraktoAuditor {
 				}
 
 				const standard   = request.linterStandard;
-				const configFile = path.join(process.cwd(), langPath, 'eslint.config.js');
+				const configFile = path.join(process.cwd(), langPath, 'eslint.config.mjs');
 				const eslint     = new ESLint({ cwd: request.workspacePath, overrideConfigFile: configFile });
 				const result     = (await eslint.lintText(content, { filePath: request.filePath })) || [];
 
@@ -110,24 +110,24 @@ class FraktoAuditor {
 			 * Detects and reports emoji usage violations in code using Frakto's custom emoji linter.
 			 *
 			 * @param {string} content - The content to lint.
-			 * @param {object} request - The request object.
+			 * @param {object} request - The object containing request details.
 			 *
 			 * @returns {Promise<Array>}
 			 */
 			emoji: async (content, request) => {
 				const standard = request.linterStandard;
-				const emoji    = new fraktoEmojiLinter({ whitelist: ['©'] });
+				const emoji    = new emojiLinter({ whitelist: ['©'] });
 				const result   = emoji.detectEmojis(content) || [];
 
 				return this.parseDiagnostics('emoji', result, standard);
 			},
 
 			/**
-			 * TODO: Split in separate functions.
+			 * TODO: Move in to a special engine created with php.
 			 * PHP CodeSniffer formatter and linter.
 			 *
 			 * @param {string} content - The content to process.
-			 * @param {object} config  - Tool configuration.
+			 * @param {object} config  - The object containing request details.
 			 * @param {string} mode    - Processing mode.
 			 *
 			 * @returns {Promise<object>}
@@ -212,32 +212,32 @@ class FraktoAuditor {
 			javascript: {
 				formatters: ['prettier', 'eslintFix'],
 				linters: ['eslint', 'emoji'],
-				path: 'configs/js'
+				path: 'src/configs/js'
 			},
 			typescript: {
 				formatters: ['prettier', 'eslintFix'],
 				linters: ['eslint', 'emoji'],
-				path: 'configs/ts'
+				path: 'src/configs/ts'
 			},
 			json: {
 				formatters: ['prettier', 'eslintFix'],
 				linters: ['eslint', 'emoji'],
-				path: 'configs/json'
+				path: 'src/configs/json'
 			},
 			jsonc: {
 				formatters: ['prettier'],
 				linters: ['emoji'],
-				path: 'configs/common'
+				path: 'src/configs/common'
 			},
 			markdown: {
 				formatters: ['prettier'],
 				linters: [],
-				path: 'configs/md'
+				path: 'src/configs/md'
 			},
 			html: {
 				formatters: ['prettier', 'removeSelfClosingSlash', 'emoji'],
 				linters: [],
-				path: 'configs/html'
+				path: 'src/configs/html'
 			},
 			css: {
 				// TODO: Implement CSS formatting and linting
@@ -252,6 +252,7 @@ class FraktoAuditor {
 				path: 'scss'
 			},
 			php: {
+				// TODO: Move in to a special engine created with php.
 				formatters: ['phpcbf'],
 				linters: ['phpcs'],
 				path: 'vendor'
@@ -259,7 +260,7 @@ class FraktoAuditor {
 			yaml: {
 				formatters: ['prettier'],
 				linters: [],
-				path: 'configs/common'
+				path: 'src/configs/common'
 			}
 		};
 	}

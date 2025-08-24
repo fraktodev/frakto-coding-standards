@@ -1,13 +1,14 @@
+// Dependencies
 import { readdirSync } from 'node:fs';
-import { join, basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { join, basename } from 'node:path';
 
 const rulesDir  = join(import.meta.dirname || new URL('.', import.meta.url).pathname, 'rules');
-const ruleFiles = readdirSync(rulesDir).filter((f) => f.endsWith('.js'));
+const ruleFiles = readdirSync(rulesDir).filter((f) => f.endsWith('.mjs'));
 const rules     = {};
 
 for (const file of ruleFiles) {
-	const name   = basename(file, '.js');
+	const name   = basename(file, '.mjs');
 	const module = await import(pathToFileURL(join(rulesDir, file)));
 	rules[name] = module.default;
 }
