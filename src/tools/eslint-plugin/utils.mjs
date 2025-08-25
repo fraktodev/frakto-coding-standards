@@ -3,7 +3,6 @@
  *
  * @param {string}  sourceCode - The source code object.
  * @param {ASTNode} node       - The node to get the docblock for.
- *
  * @returns {docblock|void}
  */
 export const getDocblock = (sourceCode, node) => {
@@ -38,7 +37,6 @@ export const getDocblock = (sourceCode, node) => {
  * @param {string}   sourceCode - The source code object.
  * @param {docblock} docblock   - The docblock to search within.
  * @param {string}   identifier - The identifier to find.
- *
  * @returns {SourceLocation}
  */
 export const getDocLoc = (sourceCode, docblock, identifier) => {
@@ -61,7 +59,6 @@ export const getDocLoc = (sourceCode, docblock, identifier) => {
  * Create an export validator function for docblock rules.
  *
  * @param {function} validateFn - The validation function to call for matching exports.
- *
  * @returns {function}
  */
 export const createExportValidator = (validateFn) => {
@@ -89,7 +86,6 @@ export const createExportValidator = (validateFn) => {
  * Normalize types to their preferred alternatives.
  *
  * @param {string} type - The type to normalize.
- *
  * @returns {string}
  */
 export const normalizeTypes = (type) => {
@@ -110,7 +106,7 @@ export const normalizeTypes = (type) => {
 		return 'any';
 	}
 
-	if (['undefined', 'null'].includes(lowerType)) {
+	if ('undefined' === lowerType) {
 		return 'void';
 	}
 

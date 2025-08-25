@@ -18,11 +18,10 @@ export default {
 		/**
 		 * Traverses the given statements to find try-catch blocks.
 		 *
-		 * @param {Array<ASTNode>} statements - The statements to traverse.
-		 *
+		 * @param {ASTNode[]} statements - The statements to traverse.
 		 * @returns {boolean}
 		 */
-		const traverse = (statements) => {
+		const traverseTryCatch = (statements) => {
 			if (!statements) return false;
 
 			for (const stmt of statements) {
@@ -30,22 +29,66 @@ export default {
 					return true;
 				}
 				else if ('IfStatement' === stmt.type) {
-					if (traverse([stmt.consequent])) return true;
-					if (stmt.alternate && traverse([stmt.alternate])) return true;
+					if (traverseTryCatch([stmt.consequent])) return true;
+					if (stmt.alternate && traverseTryCatch([stmt.alternate])) return true;
 				}
 				else if ('BlockStatement' === stmt.type) {
-					if (traverse(stmt.body)) return true;
+					if (traverseTryCatch(stmt.body)) return true;
 				}
 				else if ('SwitchStatement' === stmt.type) {
 					for (const caseNode of stmt.cases) {
-						if (traverse(caseNode.consequent)) return true;
+						if (traverseTryCatch(caseNode.consequent)) return true;
 					}
 				}
 				else if ('WhileStatement' === stmt.type || 'DoWhileStatement' === stmt.type) {
-					if (traverse([stmt.body])) return true;
+					if (traverseTryCatch([stmt.body])) return true;
 				}
 				else if ('ForStatement' === stmt.type || 'ForInStatement' === stmt.type || 'ForOfStatement' === stmt.type) {
-					if (traverse([stmt.body])) return true;
+					if (traverseTryCatch([stmt.body])) return true;
+				}
+			}
+
+			return false;
+		};
+
+		/**
+		 * Traverses the given statements to find throw statements.
+		 *
+		 * @param {ASTNode[]} statements - The statements to traverse.
+		 * @returns {boolean}
+		 */
+		const traverseThrows = (statements) => {
+			if (!statements) return false;
+
+			for (const stmt of statements) {
+				if ('ThrowStatement' === stmt.type) {
+					return true;
+				}
+				else if ('IfStatement' === stmt.type) {
+					if (traverseThrows([stmt.consequent])) return true;
+					if (stmt.alternate && traverseThrows([stmt.alternate])) return true;
+				}
+				else if ('BlockStatement' === stmt.type) {
+					if (traverseThrows(stmt.body)) return true;
+				}
+				else if ('SwitchStatement' === stmt.type) {
+					for (const caseNode of stmt.cases) {
+						if (traverseThrows(caseNode.consequent)) return true;
+					}
+				}
+				else if ('WhileStatement' === stmt.type || 'DoWhileStatement' === stmt.type) {
+					if (traverseThrows([stmt.body])) return true;
+				}
+				else if ('ForStatement' === stmt.type || 'ForInStatement' === stmt.type || 'ForOfStatement' === stmt.type) {
+					if (traverseThrows([stmt.body])) return true;
+				}
+				else if ('TryStatement' === stmt.type) {
+					// Check throws in try block
+					if (traverseThrows(stmt.block.body)) return true;
+					// Check throws in catch block
+					if (stmt.handler && traverseThrows(stmt.handler.body.body)) return true;
+					// Check throws in finally block
+					if (stmt.finalizer && traverseThrows(stmt.finalizer.body)) return true;
 				}
 			}
 
@@ -56,14 +99,29 @@ export default {
 		 * Checks if a node has a try-catch block.
 		 *
 		 * @param {ASTNode} node - The node to check.
-		 *
 		 * @returns {boolean}
 		 */
 		const hasTryCatch = (node) => {
 			if (!node.body) return false;
 
 			if ('BlockStatement' === node.body.type) {
-				return traverse(node.body.body);
+				return traverseTryCatch(node.body.body);
+			}
+
+			return false;
+		};
+
+		/**
+		 * Checks if a node has throw statements.
+		 *
+		 * @param {ASTNode} node - The node to check.
+		 * @returns {boolean}
+		 */
+		const hasThrowStatements = (node) => {
+			if (!node.body) return false;
+
+			if ('BlockStatement' === node.body.type) {
+				return traverseThrows(node.body.body);
 			}
 
 			return false;
@@ -73,7 +131,6 @@ export default {
 		 * Validates the docblock for a given node.
 		 *
 		 * @param {ASTNode} node - The node to validate.
-		 *
 		 * @returns {void}
 		 */
 		const validate = (node) => {
@@ -88,26 +145,28 @@ export default {
 			const tags            = parsed[0]?.tags ?? [];
 			const throwsTag       = tags.find((tag) => 'throw' === tag.tag || 'throws' === tag.tag);
 			const hasTryStatement = hasTryCatch(node);
+			const hasThrows       = hasThrowStatements(node);
+			const canThrowErrors  = hasTryStatement || hasThrows;
 
-			if (hasTryStatement && !throwsTag) {
+			if (canThrowErrors && !throwsTag) {
 				context.report({
 					loc: docblock.loc,
-					message: 'Declaration contains try-catch block but no @throws documentation.'
+					message: 'Declaration can throw errors but no @throws documentation found.'
 				});
 				return;
 			}
 
-			if (!hasTryStatement && throwsTag) {
+			if (!canThrowErrors && throwsTag) {
 				context.report({
 					loc: getDocLoc(sourceCode, docblock, '@throws'),
-					message: 'Declaration has @throws documentation but no try-catch block found.'
+					message: 'Declaration has @throws documentation but no try-catch blocks or throw statements found.'
 				});
 				return;
 			}
 
 			if (!throwsTag) return;
 
-			let { tag: label, type, description } = throwsTag;
+			let { tag: label, type, name, description } = throwsTag;
 
 			if ('throw' === label) {
 				context.report({
@@ -144,7 +203,11 @@ export default {
 				return;
 			}
 
-			if (!description) {
+			let fullDescription = '';
+			if (name) fullDescription += name;
+			if (description) fullDescription += (name ? ' ' : '') + description;
+
+			if (!fullDescription) {
 				context.report({
 					loc: getDocLoc(sourceCode, docblock, `@throws {${type}}`),
 					message: `@throws must include a description.`
@@ -152,27 +215,23 @@ export default {
 				return;
 			}
 
-			if (!description.endsWith('.')) {
+			if (!fullDescription.endsWith('.')) {
 				context.report({
 					loc: getDocLoc(sourceCode, docblock, `@throws {${type}}`),
 					message: '@throws description must end with a period.',
 					fix: (fixer) => {
-						const fixed = docblock.value.replace(description, `${description}.`);
+						let contentToFix = `@throws {${type}}`;
+						if (name) contentToFix += ` ${name}`;
+						if (description) contentToFix += ` ${description}`;
+
+						const fixed = docblock.value.replace(contentToFix, `@throws {${type}} ${fullDescription}.`);
 						return fixer.replaceText(docblock, `/*${fixed}*/`);
 					}
 				});
 				return;
 			}
 
-			if (10 > description.length) {
-				context.report({
-					loc: getDocLoc(sourceCode, docblock, `@throws {${type}}`),
-					message: '@throws description must be at least 10 characters long.'
-				});
-				return;
-			}
-
-			if (80 < description.length) {
+			if (80 < fullDescription.length) {
 				context.report({
 					loc: getDocLoc(sourceCode, docblock, `@throws {${type}}`),
 					message: '@throws description must not exceed 80 characters.'

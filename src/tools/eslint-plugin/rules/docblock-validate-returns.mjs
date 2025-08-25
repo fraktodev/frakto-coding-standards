@@ -19,7 +19,6 @@ export default {
 		 * Validates the docblock for a given node.
 		 *
 		 * @param {ASTNode} node - The node to validate.
-		 *
 		 * @returns {void}
 		 */
 		const validate = (node) => {
@@ -42,7 +41,7 @@ export default {
 				return;
 			}
 
-			let { tag: label, type, description } = returnsTag;
+			let { tag: label, type, name, description } = returnsTag;
 
 			if ('return' === label) {
 				context.report({
@@ -79,12 +78,26 @@ export default {
 				return;
 			}
 
-			if (description) {
+			const hasGenericObject = expectedType.split('|').some((t) => 'object' === t.trim());
+
+			if (hasGenericObject) {
+				context.report({
+					loc: getDocLoc(sourceCode, docblock, `@returns {${type}}`),
+					message: `@returns should not use generic "object" type. Please describe the object shape, e.g., {{success: boolean, transactionId: string, error?: string}}.`
+				});
+				return;
+			}
+
+			if (name || description) {
 				context.report({
 					loc: getDocLoc(sourceCode, docblock, `@returns {${type}}`),
 					message: `@returns must not include a description.`,
 					fix: (fixer) => {
-						const fixed = docblock.value.replace(`@returns {${type}} - ${description}`, `@returns {${type}}`);
+						let contentToRemove = `@returns {${type}}`;
+						if (name) contentToRemove += ` ${name}`;
+						if (description) contentToRemove += ` ${description}`;
+
+						const fixed = docblock.value.replace(contentToRemove, `@returns {${type}}`);
 						return fixer.replaceText(docblock, `/*${fixed}*/`);
 					}
 				});
