@@ -5,7 +5,7 @@ export default {
 	meta: {
 		type: 'problem',
 		docs: {
-			description: 'Enforce the absence of @example tags in docblocks.',
+			description: 'Enforce only allowed tags in function docblocks.',
 			category: 'Best Practices',
 			recommended: true
 		},
@@ -13,7 +13,9 @@ export default {
 		schema: []
 	},
 	create(context) {
-		const sourceCode = context.sourceCode || context.getSourceCode();
+		const sourceCode          = context.sourceCode || context.getSourceCode();
+		const allowedFunctionTags = ['param', 'returns', 'return', 'throws', 'throw', 'see', 'deprecated'];
+		const allowedClassTags    = ['class', 'abstract', 'implements', 'extends', 'see', 'deprecated'];
 
 		/**
 		 * Validates the docblock for a given node.
@@ -41,12 +43,24 @@ export default {
 				return;
 			}
 
-			const exampleTags = tags.filter((tag) => 'example' === tag.tag);
-			if (0 < exampleTags.length) {
-				context.report({
-					loc: getDocLoc(sourceCode, docblock, '@example'),
-					message: '@example tags are not allowed in docblocks.'
-				});
+			const allowedTags = 'ClassDeclaration' === node.type ? allowedClassTags : allowedFunctionTags;
+			const nodeType    = 'ClassDeclaration' === node.type ? 'class' : 'function';
+
+			for (const tag of tags) {
+				if ('todo' === tag.tag) {
+					context.report({
+						loc: getDocLoc(sourceCode, docblock, `@${tag.tag}`),
+						message: '@todo must be inserted in to docblock description (e.g. TODO: Fix the bug)'
+					});
+					return;
+				}
+
+				if (!allowedTags.includes(tag.tag)) {
+					context.report({
+						loc: getDocLoc(sourceCode, docblock, `@${tag.tag}`),
+						message: `@${tag.tag} tag is not allowed in ${nodeType} docblocks. Allowed tags: ${allowedTags.join(', ')}.`
+					});
+				}
 			}
 		};
 
@@ -54,6 +68,7 @@ export default {
 		const validateExport = createExportValidator(validate);
 
 		return {
+			ClassDeclaration: validate,
 			MethodDefinition: validate,
 			ArrowFunctionExpression: validate,
 			ExportNamedDeclaration: validateExport,

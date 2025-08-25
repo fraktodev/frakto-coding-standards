@@ -74,6 +74,7 @@ export default {
 		'no-block-comments': rules['no-block-comments'],
 		'no-orphaned-docblocks': rules['no-orphaned-docblocks'],
 		'require-docblock': rules['require-docblock'],
+		'docblock-allowed-tags': rules['docblock-allowed-tags'],
 		'docblock-validate-description': rules['docblock-validate-description'],
 		'docblock-validate-params-js': rules['docblock-validate-params-js'],
 		'docblock-validate-params-ts': rules['docblock-validate-params-ts'],
@@ -81,8 +82,7 @@ export default {
 		'docblock-validate-returns': rules['docblock-validate-returns'],
 		'docblock-validate-tag-order': rules['docblock-validate-tag-order'],
 		'docblock-validate-spacing': rules['docblock-validate-spacing'],
-		'docblock-no-returns': rules['docblock-no-returns'],
-		'docblock-no-examples': rules['docblock-no-examples']
+		'docblock-no-returns': rules['docblock-no-returns']
 	},
 	configs: {
 		'recommended-js': {
@@ -93,7 +93,7 @@ export default {
 				'frakto/no-block-comments': 'error',
 				'frakto/no-orphaned-docblocks': 'error',
 				'frakto/require-docblock': 'error',
-				'frakto/docblock-no-examples': 'error',
+				'frakto/docblock-allowed-tags': 'error',
 				'frakto/docblock-validate-description': 'error',
 				'frakto/docblock-validate-params-js': 'error',
 				'frakto/docblock-validate-throws': 'error',
@@ -110,7 +110,7 @@ export default {
 				'frakto/no-block-comments': 'error',
 				'frakto/no-orphaned-docblocks': 'error',
 				'frakto/require-docblock': 'error',
-				'frakto/docblock-no-examples': 'error',
+				'frakto/docblock-allowed-tags': 'error',
 				'frakto/docblock-no-returns': 'error',
 				'frakto/docblock-validate-description': 'error',
 				'frakto/docblock-validate-params-ts': 'error',
