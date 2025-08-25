@@ -8,7 +8,6 @@ import fraktoAuditor from './src/index.mjs';
  * Throws an error with the specified message.
  *
  * @param {string} message - The error message to throw.
- *
  * @returns {void}
  */
 export const throwError = (message) => {
@@ -20,7 +19,7 @@ export const throwError = (message) => {
 /**
  * Retrieves and validates the payload from the environment variable.
  *
- * @returns {object}
+ * @returns {payload}
  */
 export const getPayload = () => {
 	const rawPayload = process.env.FRAKTO_PAYLOAD;

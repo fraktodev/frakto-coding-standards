@@ -17,7 +17,6 @@ export default {
 		 * Checks if the "else" keyword is positioned correctly.
 		 *
 		 * @param {ASTNode} node - The if statement node.
-		 *
 		 * @returns {void}
 		 */
 		const checkElsePosition = (node) => {
@@ -56,7 +55,6 @@ export default {
 		 * Checks if the "catch" keyword is positioned correctly.
 		 *
 		 * @param {ASTNode} node - The try statement node.
-		 *
 		 * @returns {void}
 		 */
 		const checkTryCatchPosition = (node) => {

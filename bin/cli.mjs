@@ -50,10 +50,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 			'.yaml': 'yaml',
 			'.yml': 'yaml'
 		};
-		 
 
-		const language = languageMap[ext];
-		const request  = {
+		const language    = languageMap[ext];
+		const request     = {
 			mode,
 			content,
 			filePath: path.resolve(filePath),
@@ -63,8 +62,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 			workspacePath: path.dirname(path.resolve(filePath))
 		};
 
-		const auditor  = new fraktoAuditor();
-		const response = await auditor.audit(language, request);
+		const auditor     = new fraktoAuditor();
+		const response    = await auditor.audit(language, request);
 
 		if (['format', 'both'].includes(mode) && null !== response.formatted) {
 			if (response.formatted === content) {

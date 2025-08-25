@@ -18,7 +18,6 @@ export default {
 		 * Validates the docblock for a given node.
 		 *
 		 * @param {ASTNode} node - The node to validate.
-		 *
 		 * @returns {void}
 		 */
 		const validate = (node) => {

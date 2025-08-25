@@ -14,9 +14,8 @@ export default {
 		/**
 		 * Collects all nodes in the AST.
 		 *
-		 * @param {ASTNode}        node     - The current node.
-		 * @param {Array<ASTNode>} allNodes - The array to collect nodes.
-		 *
+		 * @param {ASTNode}   node     - The current node.
+		 * @param {ASTNode[]} allNodes - The array to collect nodes.
 		 * @returns {void}
 		 */
 		const collectNodes = (node, allNodes) => {
@@ -45,7 +44,6 @@ export default {
 		 * Checks if a node is a valid target for a docblock.
 		 *
 		 * @param {ASTNode} node - The node to check.
-		 *
 		 * @returns {boolean}
 		 */
 		const isValidDocblockTarget = (node) => {
@@ -66,7 +64,6 @@ export default {
 				return true;
 			}
 
-			// Handle export declarations (e.g., export const, export default)
 			if ('ExportNamedDeclaration' === node.type && node.declaration) {
 				return isValidDocblockTarget(node.declaration);
 			}

@@ -19,7 +19,6 @@ export default {
 		 * Validates the docblock for a given node.
 		 *
 		 * @param {ASTNode} node - The node to validate.
-		 *
 		 * @returns {void}
 		 */
 		const validate = (node) => {
@@ -73,10 +72,10 @@ export default {
 				return;
 			}
 
-			if (200 < description.length) {
+			if (400 < description.length) {
 				context.report({
 					loc: loc,
-					message: 'Docblock description must not exceed 200 characters.'
+					message: 'Docblock description must not exceed 400 characters.'
 				});
 			}
 		};

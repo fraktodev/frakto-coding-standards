@@ -17,11 +17,9 @@ export default {
 		 * Check if a docblock exists for a given node.
 		 *
 		 * @param {ASTNode} node - The node to check.
-		 *
 		 * @returns {void}
 		 */
 		const checkDocblock = (node) => {
-			// Skip arrow functions that are inline callbacks
 			if ('ArrowFunctionExpression' === node.type) {
 				// Skip if it's a callback in method calls like .map(), .filter(), .some(), etc.
 				if ('CallExpression' === node.parent?.type && node.parent.arguments.includes(node)) {
@@ -69,14 +67,11 @@ export default {
 		 * Check if the export declaration has a docblock.
 		 *
 		 * @param {ASTNode} node - The node to check.
-		 *
 		 * @returns {void}
 		 */
 		const checkExportDeclaration = (node) => {
-			// Only check exports that contain arrow functions
 			if ('ExportNamedDeclaration' === node.type && node.declaration) {
 				if ('VariableDeclaration' === node.declaration.type && node.declaration.declarations) {
-					// Check if any declarator has an arrow function
 					const hasArrowFunction = node.declaration.declarations.some(
 						(declarator) => 'ArrowFunctionExpression' === declarator.init?.type
 					);
@@ -86,7 +81,6 @@ export default {
 				}
 			}
 			else if ('ExportDefaultDeclaration' === node.type) {
-				// Check if the default export is an arrow function or function declaration
 				if ('ArrowFunctionExpression' === node.declaration?.type || 'FunctionDeclaration' === node.declaration?.type) {
 					checkDocblock(node);
 				}

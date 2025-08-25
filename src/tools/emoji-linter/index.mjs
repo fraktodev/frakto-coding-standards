@@ -16,23 +16,23 @@ class EmojiLinter {
 	/**
 	 * Constructor for FraktoEmojiLinter.
 	 *
-	 * @param {object} config - The object with configuration options for the linter.
-	 *
+	 * @param {string[]} whitelist - Array of whitelisted emojis that won't be flagged.
+	 * @param {string}   message   - The message to display when an emoji is detected.
+	 * @param {string}   severity  - The severity level of the linting (error, warning, info).
 	 * @returns {void}
 	 */
-	constructor(config) {
+	constructor({ whitelist, message, severity }) {
 		const validValues = Object.values(EmojiLinter.severities);
 
-		this.whitelist = config.whitelist || [];
-		this.message = config.message || 'Emoji usage detected - emojis are not allowed in code';
-		this.severity = validValues.includes(config.severity) ? config.severity : 'error';
+		this.whitelist = whitelist || [];
+		this.message = message || 'Emoji usage detected - emojis are not allowed in code';
+		this.severity = validValues.includes(severity) ? severity : 'error';
 	}
 
 	/**
 	 * Lint a string for emoji usage.
 	 *
 	 * @param {string} content - The content to lint.
-	 *
 	 * @returns {object[]}
 	 */
 	detectEmojis(content) {
@@ -73,7 +73,6 @@ class EmojiLinter {
 	 * Fix emoji usage in a string.
 	 *
 	 * @param {string} content - The content to fix.
-	 *
 	 * @returns {string}
 	 */
 	removeEmojis(content) {
@@ -87,7 +86,6 @@ class EmojiLinter {
 	 * Lint a file for emoji usage.
 	 *
 	 * @param {string} filePath - The path to the file to lint.
-	 *
 	 * @returns {object[]}
 	 */
 	lintFile(filePath) {
@@ -99,7 +97,6 @@ class EmojiLinter {
 	 * Fix emoji usage in a file.
 	 *
 	 * @param {string} filePath - The path to the file to fix.
-	 *
 	 * @returns {void}
 	 */
 	fixFile(filePath) {

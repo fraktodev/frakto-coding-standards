@@ -9,8 +9,7 @@ class HTMLFormatter {
 	/**
 	 * Constructor - Initialize the formatter with void elements configuration.
 	 *
-	 * @param {object} config - Optional. Object containing configuration for the formatter.
-	 *
+	 * @param {object} config - Optional. Object containing configuration for the formatter. Default: {}.
 	 * @returns {void}
 	 */
 	constructor(config = {}) {
@@ -20,8 +19,7 @@ class HTMLFormatter {
 	/**
 	 * Initialize the list of void elements that should not have closing tags.
 	 *
-	 * @param {Array<string>} customElements - Optional. Custom list of void elements.
-	 *
+	 * @param {string[]} customElements - Optional. Custom list of void elements.
 	 * @returns {void}
 	 */
 	initializeVoidElements(customElements) {
@@ -58,7 +56,6 @@ class HTMLFormatter {
 	 * Format HTML content by removing trailing slashes from self-closing tags.
 	 *
 	 * @param {string} content - The HTML content to format.
-	 *
 	 * @returns {string}
 	 */
 	format(content) {
@@ -75,7 +72,6 @@ class HTMLFormatter {
 	 * Validate if the content is suitable for formatting.
 	 *
 	 * @param {string} content - The content to validate.
-	 *
 	 * @returns {boolean}
 	 */
 	isValidContent(content) {

@@ -13,17 +13,13 @@ import { spawn } from 'child_process';
  */
 class FraktoAuditor {
 	/**
-	 * Constructor - Initialize the auditor with tool handlers, language configurations, and ignore patterns.
-	 *
-	 * @param {object} config - Optional. An object containing configuration options.
+	 * Constructor - Initialize the auditor with tool handlers and language configurations.
 	 *
 	 * @returns {void}
 	 */
-	constructor(config = { ignoreOnFormat: [], ignoreOnLint: [] }) {
+	constructor() {
 		this.initializeToolHandlers();
 		this.initializeLanguageConfigs();
-		this.ignoreOnFormat = config.ignoreOnFormat;
-		this.ignoreOnLint = config.ignoreOnLint;
 	}
 
 	/**
@@ -39,7 +35,6 @@ class FraktoAuditor {
 			 * @param {string} content  - The content to format.
 			 * @param {object} request  - The object containing request details.
 			 * @param {string} langPath - The path to the configuration files.
-			 *
 			 * @returns {Promise<string>}
 			 */
 			prettier: async (content, request, langPath) => {
@@ -56,7 +51,6 @@ class FraktoAuditor {
 			 * @param {string} content  - The content to format.
 			 * @param {object} request  - The object containing request details.
 			 * @param {string} langPath - The path to the configuration files.
-			 *
 			 * @returns {Promise<string>}
 			 */
 			eslintFix: async (content, request, langPath) => {
@@ -75,7 +69,6 @@ class FraktoAuditor {
 			 * Formats HTML content.
 			 *
 			 * @param {string} content - The content to format.
-			 *
 			 * @returns {Promise<string>}
 			 */
 			htmlFormatter: async (content) => {
@@ -91,7 +84,6 @@ class FraktoAuditor {
 			 * @param {string} content  - The content to lint.
 			 * @param {object} request  - The object containing request details.
 			 * @param {string} langPath - The path to the configuration files.
-			 *
 			 * @returns {Promise<object>}
 			 */
 			eslint: async (content, request, langPath) => {
@@ -112,7 +104,6 @@ class FraktoAuditor {
 			 *
 			 * @param {string} content - The content to lint.
 			 * @param {object} request - The object containing request details.
-			 *
 			 * @returns {Promise<Array>}
 			 */
 			emoji: async (content, request) => {
@@ -130,7 +121,6 @@ class FraktoAuditor {
 			 * @param {string} content - The content to process.
 			 * @param {object} config  - The object containing request details.
 			 * @param {string} mode    - Processing mode.
-			 *
 			 * @returns {Promise<object>}
 			 */
 			phpcs: async (content, config, mode) => {
@@ -272,8 +262,7 @@ class FraktoAuditor {
 	 * @param {string} linter - The linter used.
 	 * @param {object} data   - The object containing diagnostics data.
 	 * @param {string} source - The source of the diagnostics.
-	 *
-	 * @returns {string[]|null}
+	 * @returns {any[]|null}
 	 */
 	parseDiagnostics(linter, data, source) {
 		if (!Array.isArray(data)) {
@@ -319,28 +308,10 @@ class FraktoAuditor {
 	}
 
 	/**
-	 * Checks if a file path matches any ignore pattern.
-	 *
-	 * @param {string} mode     - The processing mode.
-	 * @param {string} filePath - The file path to check.
-	 *
-	 * @returns {boolean}
-	 */
-	shouldIgnore(mode, filePath) {
-		if ('format' === mode) {
-			return this.ignoreOnFormat.some((pattern) => new RegExp(pattern).test(filePath));
-		}
-		else if ('lint' === mode) {
-			return this.ignoreOnLint.some((pattern) => new RegExp(pattern).test(filePath));
-		}
-	}
-
-	/**
 	 * Main audit method - processes content for a specific language.
 	 *
 	 * @param {string} language - The language to process.
 	 * @param {object} request  - The request object containing content and options.
-	 *
 	 * @returns {Promise<object>}
 	 */
 	async audit(language, request) {

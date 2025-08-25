@@ -19,7 +19,6 @@ export default {
 		 * Get the parameters for a given node, expanding object destructuring.
 		 *
 		 * @param {ASTNode} node - The node to get the parameters from.
-		 *
 		 * @returns {any[]}
 		 */
 		const getNodeParams = (node) => {
@@ -63,7 +62,6 @@ export default {
 		 * Expands object patterns and assignment patterns into individual parameters.
 		 *
 		 * @param {ASTNode[]} params - The raw parameters from the AST.
-		 *
 		 * @returns {object[]}
 		 */
 		const expandParams = (params) => {
@@ -157,7 +155,6 @@ export default {
 		 * Analyzes array elements to determine the unified type.
 		 *
 		 * @param {ASTNode[]} elements - Array of elements from ArrayExpression.
-		 *
 		 * @returns {string}
 		 */
 		const analyzeArrayElements = (elements) => {
@@ -188,7 +185,6 @@ export default {
 		 * Get a formatted default value string from an AST node.
 		 *
 		 * @param {ASTNode} node - The default value node.
-		 *
 		 * @returns {string}
 		 */
 		const getFormattedDefaultValue = (node) => {
@@ -223,7 +219,6 @@ export default {
 		 * Returns the type of a default value node.
 		 *
 		 * @param {ASTNode} node - The right side of a parameter default value.
-		 *
 		 * @returns {string}
 		 */
 		const getDefaultValueType = (node) => {
@@ -255,7 +250,6 @@ export default {
 		 * Get the aligned parameters from the tags.
 		 *
 		 * @param {object[]} tags - The tags to get the aligned parameters from.
-		 *
 		 * @returns {object[]}
 		 */
 		const getAlignedParams = (tags) => {
@@ -283,7 +277,6 @@ export default {
 		 * Get the unaligned parameters from the docblock.
 		 *
 		 * @param {docblock} docblock - The docblock to get the unaligned parameters from.
-		 *
 		 * @returns {object[]}
 		 */
 		const getUnalignedParams = (docblock) => {
@@ -298,7 +291,6 @@ export default {
 		 *
 		 * @param {string}   docText       - The original docblock text.
 		 * @param {string[]} alignedParams - The aligned parameter lines.
-		 *
 		 * @returns {string}
 		 */
 		const replaceParamLines = (docText, alignedParams) => {
@@ -333,7 +325,6 @@ export default {
 		 * Validates the docblock for a given node.
 		 *
 		 * @param {ASTNode} node - The node to validate.
-		 *
 		 * @returns {void}
 		 */
 		const validate = (node) => {
