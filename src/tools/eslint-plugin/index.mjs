@@ -82,6 +82,7 @@ export default {
 		'docblock-validate-returns': rules['docblock-validate-returns'],
 		'docblock-validate-tag-order': rules['docblock-validate-tag-order'],
 		'docblock-validate-spacing': rules['docblock-validate-spacing'],
+		'docblock-validate-class-tags': rules['docblock-validate-class-tags'],
 		'docblock-no-returns': rules['docblock-no-returns']
 	},
 	configs: {
@@ -99,7 +100,8 @@ export default {
 				'frakto/docblock-validate-throws': 'error',
 				'frakto/docblock-validate-returns': 'error',
 				'frakto/docblock-validate-tag-order': 'error',
-				'frakto/docblock-validate-spacing': 'error'
+				'frakto/docblock-validate-spacing': 'error',
+				'frakto/docblock-validate-class-tags': 'error'
 			}
 		},
 		'recommended-ts': {
@@ -116,7 +118,8 @@ export default {
 				'frakto/docblock-validate-params-ts': 'error',
 				'frakto/docblock-validate-throws': 'error',
 				'frakto/docblock-validate-tag-order': 'error',
-				'frakto/docblock-validate-spacing': 'error'
+				'frakto/docblock-validate-spacing': 'error',
+				'frakto/docblock-validate-class-tags': 'error'
 			}
 		},
 		'recommended-pkg': {

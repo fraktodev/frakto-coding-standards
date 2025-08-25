@@ -15,7 +15,7 @@ export default {
 	create(context) {
 		const sourceCode          = context.sourceCode || context.getSourceCode();
 		const allowedFunctionTags = ['param', 'returns', 'return', 'throws', 'throw', 'see', 'deprecated'];
-		const allowedClassTags    = ['class', 'abstract', 'implements', 'extends', 'see', 'deprecated'];
+		const allowedClassTags    = ['class', 'abstract', 'extends', 'see', 'deprecated'];
 
 		/**
 		 * Validates the docblock for a given node.
