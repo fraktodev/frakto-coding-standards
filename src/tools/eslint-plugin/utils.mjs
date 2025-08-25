@@ -1,10 +1,10 @@
 /**
  * Get the docblock for a given node.
  *
- * @param {SourceCode} sourceCode - The source code object.
- * @param {ASTNode}    node       - The node to get the docblock for.
+ * @param {string}  sourceCode - The source code object.
+ * @param {ASTNode} node       - The node to get the docblock for.
  *
- * @returns {docblock|null}
+ * @returns {docblock|void}
  */
 export const getDocblock = (sourceCode, node) => {
 	const before = sourceCode.getCommentsBefore(node);
@@ -25,10 +25,7 @@ export const getDocblock = (sourceCode, node) => {
 		if (docblock) return docblock;
 	}
 
-	// Handle ExportNamedDeclaration and ExportDefaultDeclaration
 	if ('ExportNamedDeclaration' === node.type || 'ExportDefaultDeclaration' === node.type) {
-		// For export declarations, the docblock is before the export statement itself
-		// This is already handled by the first getCommentsBefore(node) call above
 		return null;
 	}
 
@@ -38,9 +35,9 @@ export const getDocblock = (sourceCode, node) => {
 /**
  * Get the location of a specific identifier within a docblock.
  *
- * @param {SourceCode} sourceCode - The source code object.
- * @param {docblock}   docblock   - The docblock to search within.
- * @param {string}     identifier - The identifier to find.
+ * @param {string}   sourceCode - The source code object.
+ * @param {docblock} docblock   - The docblock to search within.
+ * @param {string}   identifier - The identifier to find.
  *
  * @returns {SourceLocation}
  */
@@ -90,14 +87,23 @@ export const createExportValidator = (validateFn) => {
 
 /**
  * Normalize types to their preferred alternatives.
- * Handles both common types (String -> string) and forbidden types (* -> any).
- * Validates Array syntax and suggests Array<TYPE> format.
  *
  * @param {string} type - The type to normalize.
  *
  * @returns {string}
  */
 export const normalizeTypes = (type) => {
+	if (type.includes('|')) {
+		const unionTypes = type.split('|').map((t) => t.trim());
+
+		if (2 < unionTypes.length) {
+			return 'any';
+		}
+
+		const normalizedUnion = unionTypes.map((t) => normalizeTypes(t));
+		return normalizedUnion.join('|');
+	}
+
 	const lowerType = type.toLowerCase();
 
 	if (['*', 'mixed'].includes(lowerType)) {
@@ -108,24 +114,24 @@ export const normalizeTypes = (type) => {
 		return 'void';
 	}
 
-	// Handle array types - suggest Array<TYPE> format
+	// Handle array types - prefer TYPE[] format
 	if ('array' === lowerType) {
-		return 'Array<any>';
+		return 'any[]';
 	}
 
-	// Handle TypeScript array syntax like string[], number[]
+	// Keep existing TYPE[] syntax as is
 	if (type.includes('[]')) {
 		const baseType       = type.replace('[]', '').trim();
 		const normalizedBase = normalizeTypes(baseType);
-		return `Array<${normalizedBase}>`;
+		return `${normalizedBase}[]`;
 	}
 
-	// Validate existing Array<TYPE> syntax
+	// Convert Array<TYPE> to TYPE[] for all types
 	const arrayMatch = type.match(/^Array<(.+)>$/);
 	if (arrayMatch) {
 		const innerType       = arrayMatch[1].trim();
 		const normalizedInner = normalizeTypes(innerType);
-		return `Array<${normalizedInner}>`;
+		return `${normalizedInner}[]`;
 	}
 
 	const commonTypes = {
