@@ -5,10 +5,11 @@ export default {
 	meta: {
 		type: 'problem',
 		docs: {
-			description: 'Ensure docblock has no returns.',
+			description: 'Enforce the absence of @example tags in docblocks.',
 			category: 'Best Practices',
 			recommended: true
 		},
+		fixable: null,
 		schema: []
 	},
 	create(context) {
@@ -30,13 +31,22 @@ export default {
 
 			if (!parsed) return;
 
-			const tags       = parsed[0]?.tags ?? [];
-			const returnsTag = tags.find((tag) => 'return' === tag.tag || 'returns' === tag.tag);
+			const examples = parsed[0]?.examples ?? [];
+			const tags     = parsed[0]?.tags ?? [];
 
-			if (returnsTag) {
+			if (0 < examples.length) {
 				context.report({
-					loc: getDocLoc(sourceCode, docblock, '@return'),
-					message: 'Declaration must not have a returns tag.'
+					loc: getDocLoc(sourceCode, docblock, '@example'),
+					message: '@example tags are not allowed in docblocks.'
+				});
+				return;
+			}
+
+			const exampleTags = tags.filter((tag) => 'example' === tag.tag);
+			if (0 < exampleTags.length) {
+				context.report({
+					loc: getDocLoc(sourceCode, docblock, '@example'),
+					message: '@example tags are not allowed in docblocks.'
 				});
 			}
 		};
@@ -44,7 +54,6 @@ export default {
 		// Create a validator for export declarations.
 		const validateExport = createExportValidator(validate);
 
-		/* eslint-disable @typescript-eslint/naming-convention */
 		return {
 			MethodDefinition: validate,
 			ArrowFunctionExpression: validate,

@@ -2,7 +2,7 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import frakto from '../../linters/eslint-plugin/index.mjs';
+import frakto from '../../tools/eslint-plugin/index.mjs';
 
 import { defineConfig } from 'eslint/config';
 

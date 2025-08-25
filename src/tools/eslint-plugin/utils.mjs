@@ -109,7 +109,6 @@ export const normalizeTypes = (type) => {
 	}
 
 	// Handle common types with incorrect casing
-	/* eslint-disable @typescript-eslint/naming-convention */
 	const commonTypes = {
 		Error: 'error',
 		String: 'string',
@@ -121,7 +120,6 @@ export const normalizeTypes = (type) => {
 		Void: 'void',
 		Any: 'any'
 	};
-	/* eslint-enable @typescript-eslint/naming-convention */
 
 	return commonTypes[type] || type;
 };

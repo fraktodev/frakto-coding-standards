@@ -2,7 +2,8 @@
 import path from 'node:path';
 import prettier from 'prettier';
 import process from 'node:process';
-import emojiLinter from './linters/emoji-linter/index.mjs';
+import emojiLinter from './tools/emoji-linter/index.mjs';
+import HTMLFormatter from './tools/html-formatter/index.mjs';
 
 import { ESLint } from 'eslint';
 import { spawn } from 'child_process';
@@ -71,15 +72,15 @@ class FraktoAuditor {
 			},
 
 			/**
-			 * Removes trailing slashes from self-closing HTML tags.
+			 * Formats HTML content.
 			 *
 			 * @param {string} content - The content to format.
 			 *
 			 * @returns {Promise<string>}
 			 */
-			removeSelfClosingSlash: async (content) => {
-				const { removeSelfClosingSlash } = await import('../utils/utils.mjs');
-				const result                     = removeSelfClosingSlash(content);
+			htmlFormatter: async (content) => {
+				const formatter = new HTMLFormatter();
+				const result    = formatter.format(content);
 
 				return result || content;
 			},
@@ -231,12 +232,12 @@ class FraktoAuditor {
 			},
 			markdown: {
 				formatters: ['prettier'],
-				linters: [],
+				linters: ['emoji'],
 				path: 'src/configs/md'
 			},
 			html: {
-				formatters: ['prettier', 'removeSelfClosingSlash', 'emoji'],
-				linters: [],
+				formatters: ['prettier', 'htmlFormatter'],
+				linters: ['emoji'],
 				path: 'src/configs/html'
 			},
 			css: {
@@ -259,7 +260,7 @@ class FraktoAuditor {
 			},
 			yaml: {
 				formatters: ['prettier'],
-				linters: [],
+				linters: ['emoji'],
 				path: 'src/configs/common'
 			}
 		};

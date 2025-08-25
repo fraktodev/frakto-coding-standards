@@ -26,10 +26,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 	}
 
 	try {
-		const content = readFileSync(filePath, 'utf8');
-		const ext     = path.extname(filePath).toLowerCase();
+		const content     = readFileSync(filePath, 'utf8');
+		const ext         = path.extname(filePath).toLowerCase();
 
-		/* eslint-disable @typescript-eslint/naming-convention */
 		const languageMap = {
 			'.js': 'javascript',
 			'.mjs': 'javascript',
@@ -51,7 +50,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 			'.yaml': 'yaml',
 			'.yml': 'yaml'
 		};
-		/* eslint-enable @typescript-eslint/naming-convention */
+		 
 
 		const language = languageMap[ext];
 		const request  = {

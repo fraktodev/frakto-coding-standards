@@ -95,7 +95,6 @@ export default {
 		// Create a validator for export declarations.
 		const validateExport = createExportValidator(validate);
 
-		/* eslint-disable @typescript-eslint/naming-convention */
 		return {
 			MethodDefinition: validate,
 			ArrowFunctionExpression: validate,

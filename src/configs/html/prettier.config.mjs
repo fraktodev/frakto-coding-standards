@@ -6,5 +6,6 @@ export default {
 	embeddedLanguageFormatting: 'auto',
 	bracketSameLine: false,
 	singleAttributePerLine: false,
-	htmlWhitespaceSensitivity: 'css'
+	htmlWhitespaceSensitivity: 'css',
+	removeSelfClosingSlash: true
 };

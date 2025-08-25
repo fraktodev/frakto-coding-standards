@@ -117,7 +117,6 @@ export default {
 			}
 		};
 
-		/* eslint-disable @typescript-eslint/naming-convention */
 		return {
 			IfStatement: checkElsePosition,
 			TryStatement: checkTryCatchPosition

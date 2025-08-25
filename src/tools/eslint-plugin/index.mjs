@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { join, basename } from 'node:path';
 
 const rulesDir  = join(import.meta.dirname || new URL('.', import.meta.url).pathname, 'rules');
-const ruleFiles = readdirSync(rulesDir).filter((f) => f.endsWith('.mjs'));
+const ruleFiles = readdirSync(rulesDir).filter((file) => file.endsWith('.mjs'));
 const rules     = {};
 
 for (const file of ruleFiles) {
@@ -13,7 +13,6 @@ for (const file of ruleFiles) {
 	rules[name] = module.default;
 }
 
-/* eslint-disable @typescript-eslint/naming-convention */
 const commonRules = {
 	'no-console': 'warn',
 	'no-debugger': 'warn',
@@ -28,13 +27,22 @@ const commonRules = {
 			leadingUnderscore: 'allow'
 		},
 		{
-			selector: 'variable',
-			modifiers: ['const'],
-			format: ['camelCase']
+			selector: 'import',
+			format: null
 		},
 		{
-			selector: 'function',
-			format: ['camelCase']
+			selector: 'objectLiteralProperty',
+			format: null
+		},
+		{
+			selector: 'variable',
+			modifiers: ['const'],
+			filter: {
+				regex: '^(__dirname|__filename|require|module|exports)$',
+				match: false
+			},
+			format: ['camelCase'],
+			leadingUnderscore: 'allow'
 		},
 		{
 			selector: 'class',

@@ -93,7 +93,6 @@ export default {
 			}
 		};
 
-		/* eslint-disable @typescript-eslint/naming-convention */
 		return {
 			ClassDeclaration: checkDocblock,
 			MethodDefinition: checkDocblock,
