@@ -91,6 +91,7 @@ export const createExportValidator = (validateFn) => {
 /**
  * Normalize types to their preferred alternatives.
  * Handles both common types (String -> string) and forbidden types (* -> any).
+ * Validates Array syntax and suggests Array<TYPE> format.
  *
  * @param {string} type - The type to normalize.
  *
@@ -99,7 +100,6 @@ export const createExportValidator = (validateFn) => {
 export const normalizeTypes = (type) => {
 	const lowerType = type.toLowerCase();
 
-	// Handle forbidden types first
 	if (['*', 'mixed'].includes(lowerType)) {
 		return 'any';
 	}
@@ -108,18 +108,41 @@ export const normalizeTypes = (type) => {
 		return 'void';
 	}
 
-	// Handle common types with incorrect casing
+	// Handle array types - suggest Array<TYPE> format
+	if ('array' === lowerType) {
+		return 'Array<any>';
+	}
+
+	// Handle TypeScript array syntax like string[], number[]
+	if (type.includes('[]')) {
+		const baseType       = type.replace('[]', '').trim();
+		const normalizedBase = normalizeTypes(baseType);
+		return `Array<${normalizedBase}>`;
+	}
+
+	// Validate existing Array<TYPE> syntax
+	const arrayMatch = type.match(/^Array<(.+)>$/);
+	if (arrayMatch) {
+		const innerType       = arrayMatch[1].trim();
+		const normalizedInner = normalizeTypes(innerType);
+		return `Array<${normalizedInner}>`;
+	}
+
 	const commonTypes = {
-		Error: 'error',
-		String: 'string',
-		Number: 'number',
-		Boolean: 'boolean',
-		Function: 'function',
-		Array: 'array',
-		Object: 'object',
-		Void: 'void',
-		Any: 'any'
+		// PascalCase
+		date: 'Date',
+		error: 'Error',
+		promise: 'Promise',
+		// lowercase
+		any: 'any',
+		void: 'void',
+		number: 'number',
+		string: 'string',
+		object: 'object',
+		boolean: 'boolean',
+		function: 'function',
+		functionCall: 'functionCall'
 	};
 
-	return commonTypes[type] || type;
+	return commonTypes[lowerType] || type;
 };

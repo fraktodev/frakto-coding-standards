@@ -20,7 +20,7 @@ export default {
 		 *
 		 * @param {ASTNode} node - The node to get the parameters from.
 		 *
-		 * @returns {any[]}
+		 * @returns {Array<any>}
 		 */
 		const getNodeParams = (node) => {
 			if (!node) return [];
@@ -60,6 +60,37 @@ export default {
 		};
 
 		/**
+		 * Analyzes array elements to determine the unified type.
+		 *
+		 * @param {Array<ASTNode>} elements - Array of elements from ArrayExpression.
+		 *
+		 * @returns {string}
+		 */
+		const analyzeArrayElements = (elements) => {
+			if (0 === elements.length) return 'Array<any>';
+
+			const types       = elements.map((element) => {
+				if ('Literal' === element.type) {
+					if (null === element.value) return 'null';
+					return typeof element.value;
+				}
+				if ('ArrayExpression' === element.type) return 'Array';
+				if ('ObjectExpression' === element.type) return 'object';
+				if ('Identifier' === element.type) return 'any';
+				if ('FunctionExpression' === element.type || 'ArrowFunctionExpression' === element.type) return 'function';
+				return 'any';
+			});
+
+			const uniqueTypes = [...new Set(types)];
+
+			if (1 === uniqueTypes.length) {
+				return `Array<${uniqueTypes[0]}>`;
+			}
+
+			return 'Array<any>';
+		};
+
+		/**
 		 * Returns the type of a default value node.
 		 *
 		 * @param {ASTNode} node - The right side of a parameter default value.
@@ -69,7 +100,9 @@ export default {
 		const getDefaultValueType = (node) => {
 			if (!node) return 'undefined';
 
-			if ('ArrayExpression' === node.type) return 'array';
+			if ('ArrayExpression' === node.type) {
+				return analyzeArrayElements(node.elements);
+			}
 			if ('ObjectExpression' === node.type) return 'object';
 			if ('Literal' === node.type) {
 				if (null === node.value) return 'null';
@@ -92,9 +125,9 @@ export default {
 		/**
 		 * Get the aligned parameters from the tags.
 		 *
-		 * @param {object[]} tags - The tags to get the aligned parameters from.
+		 * @param {Array<object>} tags - The tags to get the aligned parameters from.
 		 *
-		 * @returns {object[]}
+		 * @returns {Array<object>}
 		 */
 		const getAlignedParams = (tags) => {
 			const mapped  = tags.map((tag) => {
@@ -122,7 +155,7 @@ export default {
 		 *
 		 * @param {docblock} docblock - The docblock to get the unaligned parameters from.
 		 *
-		 * @returns {object[]}
+		 * @returns {Array<object>}
 		 */
 		const getUnalignedParams = (docblock) => {
 			return docblock.value
@@ -134,8 +167,8 @@ export default {
 		/**
 		 * Replaces the parameter lines in the docblock with aligned parameters.
 		 *
-		 * @param {string}   docText       - The original docblock text.
-		 * @param {string[]} alignedParams - The aligned parameter lines.
+		 * @param {string}        docText       - The original docblock text.
+		 * @param {Array<string>} alignedParams - The aligned parameter lines.
 		 *
 		 * @returns {string}
 		 */
@@ -224,12 +257,28 @@ export default {
 					return;
 				}
 
-				const expectedType = realIsOptional ? getDefaultValueType(realParam.right) : normalizeTypes(type);
+				let expectedType;
+				let validationMessage = '';
+
+				if (realIsOptional) {
+					expectedType = getDefaultValueType(realParam.right);
+				}
+				else {
+					expectedType = normalizeTypes(type);
+
+					// Check if user wrote invalid array syntax
+					if ('array' === type.toLowerCase()) {
+						validationMessage = `Use "Array<TYPE>" instead of "array". Consider "Array<any>" if the content type is unknown.`;
+					}
+					else if (type.includes('[]')) {
+						validationMessage = `Use "Array<TYPE>" instead of "TYPE[]" syntax.`;
+					}
+				}
 
 				if (expectedType !== type) {
 					context.report({
 						loc: getDocLoc(sourceCode, docblock, `@param {${type}}`),
-						message: `@param type is "${type}" but should be "${expectedType}".`,
+						message: validationMessage || `@param type is "${type}" but should be "${expectedType}".`,
 						fix: (fixer) => {
 							const fixed = docblock.value.replace(`@param {${type}}`, `@param {${expectedType}}`);
 							return fixer.replaceText(docblock, `/*${fixed}*/`);
@@ -316,21 +365,26 @@ export default {
 					return;
 				}
 
-				if ('array' === type || 'object' === type) {
-					const arrayKeywords  = ['empty array', 'array of', 'list of', 'collection of'];
-					const objectKeywords = ['empty object', 'object with', 'object containing', 'hash of', 'map of'];
-					const typeKeywords   = 'array' === type ? arrayKeywords : objectKeywords;
-					const hasKeywords    = typeKeywords.some((keyword) => description.toLowerCase().includes(keyword.toLowerCase()));
-
-					if (!hasKeywords) {
-						const keywordsList = typeKeywords.map((keyword) => `"${keyword}"`).join(', ');
-						context.report({
-							loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name} ${description}`),
-							message: `@param with type "${type}" must describe its content using one of these keywords: ${keywordsList}.`
-						});
-						return;
-					}
-				}
+				// Check if type requires content description keywords
+				// const isArrayType  = type.toLowerCase().includes('array') || type.includes('[]');
+				// const isObjectType = 'object' === type.toLowerCase();
+				//
+				// if (isArrayType || isObjectType) {
+				// const arrayKeywords  = ['empty array', 'array of', 'list of', 'collection of'];
+				// const objectKeywords = ['empty object', 'object with', 'object containing', 'hash of', 'map of'];
+				// const typeKeywords   = isArrayType ? arrayKeywords : objectKeywords;
+				// const hasKeywords    = typeKeywords.some((keyword) => description.toLowerCase().includes(keyword.toLowerCase()));
+				//
+				// if (!hasKeywords) {
+				// const keywordsList = typeKeywords.map((keyword) => `"${keyword}"`).join(', ');
+				// const typeDisplay  = isArrayType ? 'Array' : 'object';
+				// context.report({
+				// loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name} ${description}`),
+				// message: `@param with type "${typeDisplay}" must describe its content using one of these keywords: ${keywordsList}.`
+				// });
+				// return;
+				// }
+				// }
 
 				if (10 > description.length) {
 					context.report({
