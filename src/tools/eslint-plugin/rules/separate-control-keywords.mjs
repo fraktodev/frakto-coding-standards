@@ -1,3 +1,4 @@
+// Export Rule
 export default {
 	meta: {
 		type: 'layout',

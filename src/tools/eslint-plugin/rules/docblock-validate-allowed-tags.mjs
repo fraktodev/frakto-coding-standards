@@ -65,14 +65,13 @@ export default {
 			}
 
 			// Iterate over tags
-			tags.some((tag) => {
+			tags.forEach((tag) => {
 				// Report @todo tag
 				if ('todo' === tag.tag) {
 					context.report({
 						loc: loc(`@${tag.tag}`),
 						message: '@todo must be inserted in to docblock description (e.g. TODO: Fix the bug)'
 					});
-					return true;
 				}
 
 				// Report disallowed tags
@@ -81,7 +80,6 @@ export default {
 						loc: loc(`@${tag.tag}`),
 						message: `@${tag.tag} tag is not allowed in ${realNode.kind} docblocks. Allowed tags: ${allowedTags.join(', ')}.`
 					});
-					return true;
 				}
 			});
 		};

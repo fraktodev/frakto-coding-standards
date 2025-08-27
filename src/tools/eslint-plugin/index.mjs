@@ -3,16 +3,17 @@ import { readdirSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { join, basename } from 'node:path';
 
+// Load all rule modules
 const rulesDir  = join(import.meta.dirname || new URL('.', import.meta.url).pathname, 'rules');
 const ruleFiles = readdirSync(rulesDir).filter((file) => file.endsWith('.mjs'));
 const rules     = {};
-
 for (const file of ruleFiles) {
 	const name   = basename(file, '.mjs');
 	const module = await import(pathToFileURL(join(rulesDir, file)));
 	rules[name] = module.default;
 }
 
+// Common rules
 const commonRules = {
 	'no-console': 'warn',
 	'no-debugger': 'warn',
@@ -64,6 +65,7 @@ const commonRules = {
 	yoda: ['error', 'always']
 };
 
+// Export Plugin
 export default {
 	meta: {
 		name: 'frakto-eslint-plugin',
@@ -72,7 +74,7 @@ export default {
 	rules: {
 		'align-variables': rules['align-variables'],
 		'separate-control-keywords': rules['separate-control-keywords'],
-		'no-block-comments': rules['no-block-comments'],
+		'block-comments': rules['block-comments'],
 		'docblock-validate-allowed-tags': rules['docblock-validate-allowed-tags'],
 		'docblock-validate-description': rules['docblock-validate-description'],
 		'docblock-validate-params-js': rules['docblock-validate-params-js'],
@@ -89,7 +91,7 @@ export default {
 				...commonRules,
 				'frakto/align-variables': 'error',
 				'frakto/separate-control-keywords': 'error',
-				'frakto/no-block-comments': 'error',
+				'frakto/block-comments': 'warn',
 				'frakto/docblock-validate-allowed-tags': ['error', { language: 'js' }],
 				'frakto/docblock-validate-description': 'error',
 				'frakto/docblock-validate-params-js': 'error',
@@ -105,7 +107,7 @@ export default {
 				...commonRules,
 				'frakto/align-variables': 'error',
 				'frakto/separate-control-keywords': 'error',
-				'frakto/no-block-comments': 'error',
+				'frakto/block-comments': 'warn',
 				'frakto/docblock-validate-allowed-tags': ['error', { language: 'ts' }],
 				'frakto/docblock-validate-description': 'error',
 				'frakto/docblock-validate-params-ts': 'error',
