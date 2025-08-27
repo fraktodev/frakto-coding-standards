@@ -285,8 +285,8 @@ export default {
 					optional: docIsOptional,
 					source: [source]
 				} = paramTag;
-				const occurrence                                                                                          = index + 1;
-				const realParam                                                                                           = realParams[index];
+				const occurrence = index + 1;
+				const realParam  = realParams[index];
 
 				// Report @param type presence
 				if (type) {

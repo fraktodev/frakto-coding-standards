@@ -430,9 +430,9 @@ export default {
 					optional: docIsOptional,
 					source: [source]
 				} = paramTag;
-				const occurrence                                                                                          = index + 1;
-				const realParam                                                                                           = realParams[index];
-				const realIsOptional                                                                                      = Boolean(realParam?.hasDefault);
+				const occurrence     = index + 1;
+				const realParam      = realParams[index];
+				const realIsOptional = Boolean(realParam?.hasDefault);
 
 				// Report missing @param type
 				if (!type) {

@@ -70,7 +70,7 @@ export default {
 		version: '1.0.0'
 	},
 	rules: {
-		'align-declarations': rules['align-declarations'],
+		'align-variables': rules['align-variables'],
 		'separate-control-keywords': rules['separate-control-keywords'],
 		'no-block-comments': rules['no-block-comments'],
 		'docblock-validate-allowed-tags': rules['docblock-validate-allowed-tags'],
@@ -87,7 +87,7 @@ export default {
 		'recommended-js': {
 			rules: {
 				...commonRules,
-				'frakto/align-declarations': 'error',
+				'frakto/align-variables': 'error',
 				'frakto/separate-control-keywords': 'error',
 				'frakto/no-block-comments': 'error',
 				'frakto/docblock-validate-allowed-tags': ['error', { language: 'js' }],
@@ -103,7 +103,7 @@ export default {
 		'recommended-ts': {
 			rules: {
 				...commonRules,
-				'frakto/align-declarations': 'error',
+				'frakto/align-variables': 'error',
 				'frakto/separate-control-keywords': 'error',
 				'frakto/no-block-comments': 'error',
 				'frakto/docblock-validate-allowed-tags': ['error', { language: 'ts' }],
