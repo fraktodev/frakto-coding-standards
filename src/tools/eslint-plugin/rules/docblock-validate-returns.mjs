@@ -1,6 +1,7 @@
-import { parse } from 'comment-parser';
-import { getDocblock, getDocLoc, normalizeTypes, createExportValidator } from '../utils.mjs';
+// Dependencies
+import { getDocblockData, normalizeTypes } from '../utils.mjs';
 
+// Export Rule
 export default {
 	meta: {
 		type: 'problem',
@@ -13,8 +14,6 @@ export default {
 		schema: []
 	},
 	create(context) {
-		const sourceCode = context.sourceCode || context.getSourceCode();
-
 		/**
 		 * Validates the docblock for a given node.
 		 *
@@ -22,18 +21,17 @@ export default {
 		 * @returns {void}
 		 */
 		const validate = (node) => {
-			const docblock = getDocblock(sourceCode, node);
+			const docData = getDocblockData(context, node);
+			if (!docData) return;
+			const { docblock, realNode, data, loc } = docData;
+			if ('class' === realNode.kind) return;
 
-			if (!docblock) return;
+			// Extract tags
+			const tags        = data[0]?.tags ?? [];
+			const returnsTags = tags.filter((tag) => 'return' === tag.tag || 'returns' === tag.tag);
 
-			const parsed = parse(`/*${docblock.value}*/`);
-
-			if (!parsed) return;
-
-			const tags       = parsed[0]?.tags ?? [];
-			const returnsTag = tags.find((tag) => 'return' === tag.tag || 'returns' === tag.tag);
-
-			if (!returnsTag) {
+			// Report missing @returns tag
+			if (!returnsTags.length) {
 				context.report({
 					loc: docblock.loc,
 					message: 'Declaration must have a return type even if it is void.'
@@ -41,11 +39,23 @@ export default {
 				return;
 			}
 
+			// Report multiple @returns tags
+			if (1 < returnsTags.length) {
+				context.report({
+					loc: loc('@returns', 2),
+					message: `Declaration must have only one @returns tag.`
+				});
+				return;
+			}
+
+			// Extract @returns tag data
+			const returnsTag = returnsTags[0];
 			let { tag: label, type, name, description } = returnsTag;
 
+			// Report deprecated @return tag
 			if ('return' === label) {
 				context.report({
-					loc: getDocLoc(sourceCode, docblock, '@return'),
+					loc: loc('@return'),
 					message: `Use "@returns" instead of "@return".`,
 					fix: (fixer) => {
 						const fixed = docblock.value.replace('@return', '@returns');
@@ -55,9 +65,10 @@ export default {
 				return;
 			}
 
+			// Report missing @returns type
 			if (!type) {
 				context.report({
-					loc: getDocLoc(sourceCode, docblock, '@returns'),
+					loc: loc('@returns'),
 					message: `@returns must include a type.`
 				});
 				return;
@@ -65,9 +76,10 @@ export default {
 
 			const expectedType = normalizeTypes(type);
 
+			// Report incorrect @returns type
 			if (expectedType !== type) {
 				context.report({
-					loc: getDocLoc(sourceCode, docblock, `@returns {${type}}`),
+					loc: loc(`@returns {${type}}`),
 					message: `@returns type is "${type}" but should be "${expectedType}".`,
 					fix: (fixer) => {
 						const fixed = docblock.value.replace(`@returns {${type}}`, `@returns {${expectedType}}`);
@@ -80,17 +92,19 @@ export default {
 
 			const hasGenericObject = expectedType.split('|').some((t) => 'object' === t.trim());
 
+			// Report generic object @returns type
 			if (hasGenericObject) {
 				context.report({
-					loc: getDocLoc(sourceCode, docblock, `@returns {${type}}`),
+					loc: loc(`@returns {${type}}`),
 					message: `@returns should not use generic "object" type. Please describe the object shape, e.g., {{success: boolean, transactionId: string, error?: string}}.`
 				});
 				return;
 			}
 
+			// Report description in @returns tag
 			if (name || description) {
 				context.report({
-					loc: getDocLoc(sourceCode, docblock, `@returns {${type}}`),
+					loc: loc(`@returns {${type}}`),
 					message: `@returns must not include a description.`,
 					fix: (fixer) => {
 						let contentToRemove = `@returns {${type}}`;
@@ -105,14 +119,13 @@ export default {
 			}
 		};
 
-		// Create a validator for export declarations.
-		const validateExport = createExportValidator(validate);
-
 		return {
 			MethodDefinition: validate,
+			FunctionExpression: validate,
 			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validateExport,
-			ExportDefaultDeclaration: validateExport
+			ExportNamedDeclaration: validate,
+			ExportDefaultDeclaration: validate,
+			AssignmentExpression: validate
 		};
 	}
 };

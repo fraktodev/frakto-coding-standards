@@ -63,36 +63,10 @@ export default {
 			}
 		};
 
-		/**
-		 * Check if the export declaration has a docblock.
-		 *
-		 * @param {ASTNode} node - The node to check.
-		 * @returns {void}
-		 */
-		const checkExportDeclaration = (node) => {
-			if ('ExportNamedDeclaration' === node.type && node.declaration) {
-				if ('VariableDeclaration' === node.declaration.type && node.declaration.declarations) {
-					const hasArrowFunction = node.declaration.declarations.some(
-						(declarator) => 'ArrowFunctionExpression' === declarator.init?.type
-					);
-					if (hasArrowFunction) {
-						checkDocblock(node);
-					}
-				}
-			}
-			else if ('ExportDefaultDeclaration' === node.type) {
-				if ('ArrowFunctionExpression' === node.declaration?.type || 'FunctionDeclaration' === node.declaration?.type) {
-					checkDocblock(node);
-				}
-			}
-		};
-
 		return {
 			ClassDeclaration: checkDocblock,
 			MethodDefinition: checkDocblock,
-			ArrowFunctionExpression: checkDocblock,
-			ExportNamedDeclaration: checkExportDeclaration,
-			ExportDefaultDeclaration: checkExportDeclaration
+			ArrowFunctionExpression: checkDocblock
 		};
 	}
 };

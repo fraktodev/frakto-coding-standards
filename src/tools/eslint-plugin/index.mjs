@@ -57,8 +57,9 @@ const commonRules = {
 			format: ['PascalCase']
 		}
 	],
-	'prefer-arrow-callback': ['error', { allowNamedFunctions: false }],
+	'one-var': ['error', 'never'],
 	'func-style': ['error', 'expression'],
+	'prefer-arrow-callback': ['error', { allowNamedFunctions: false }],
 	eqeqeq: ['error', 'always'],
 	yoda: ['error', 'always']
 };
@@ -72,9 +73,7 @@ export default {
 		'align-declarations': rules['align-declarations'],
 		'separate-control-keywords': rules['separate-control-keywords'],
 		'no-block-comments': rules['no-block-comments'],
-		'no-orphaned-docblocks': rules['no-orphaned-docblocks'],
-		'require-docblock': rules['require-docblock'],
-		'docblock-allowed-tags': rules['docblock-allowed-tags'],
+		'docblock-validate-allowed-tags': rules['docblock-validate-allowed-tags'],
 		'docblock-validate-description': rules['docblock-validate-description'],
 		'docblock-validate-params-js': rules['docblock-validate-params-js'],
 		'docblock-validate-params-ts': rules['docblock-validate-params-ts'],
@@ -82,8 +81,7 @@ export default {
 		'docblock-validate-returns': rules['docblock-validate-returns'],
 		'docblock-validate-tag-order': rules['docblock-validate-tag-order'],
 		'docblock-validate-spacing': rules['docblock-validate-spacing'],
-		'docblock-validate-class-tags': rules['docblock-validate-class-tags'],
-		'docblock-no-returns': rules['docblock-no-returns']
+		'docblock-validate-class-tags': rules['docblock-validate-class-tags']
 	},
 	configs: {
 		'recommended-js': {
@@ -92,16 +90,14 @@ export default {
 				'frakto/align-declarations': 'error',
 				'frakto/separate-control-keywords': 'error',
 				'frakto/no-block-comments': 'error',
-				'frakto/no-orphaned-docblocks': 'error',
-				'frakto/require-docblock': 'error',
-				'frakto/docblock-allowed-tags': 'error',
+				'frakto/docblock-validate-allowed-tags': ['error', { language: 'js' }],
 				'frakto/docblock-validate-description': 'error',
 				'frakto/docblock-validate-params-js': 'error',
 				'frakto/docblock-validate-throws': 'error',
 				'frakto/docblock-validate-returns': 'error',
 				'frakto/docblock-validate-tag-order': 'error',
 				'frakto/docblock-validate-spacing': 'error',
-				'frakto/docblock-validate-class-tags': 'error'
+				'frakto/docblock-validate-class-tags': ['error', { language: 'js' }]
 			}
 		},
 		'recommended-ts': {
@@ -110,16 +106,13 @@ export default {
 				'frakto/align-declarations': 'error',
 				'frakto/separate-control-keywords': 'error',
 				'frakto/no-block-comments': 'error',
-				'frakto/no-orphaned-docblocks': 'error',
-				'frakto/require-docblock': 'error',
-				'frakto/docblock-allowed-tags': 'error',
-				'frakto/docblock-no-returns': 'error',
+				'frakto/docblock-validate-allowed-tags': ['error', { language: 'ts' }],
 				'frakto/docblock-validate-description': 'error',
 				'frakto/docblock-validate-params-ts': 'error',
 				'frakto/docblock-validate-throws': 'error',
 				'frakto/docblock-validate-tag-order': 'error',
 				'frakto/docblock-validate-spacing': 'error',
-				'frakto/docblock-validate-class-tags': 'error'
+				'frakto/docblock-validate-class-tags': ['error', { language: 'ts' }]
 			}
 		},
 		'recommended-pkg': {

@@ -1,6 +1,7 @@
-import { parse } from 'comment-parser';
-import { getDocblock, getDocLoc, createExportValidator } from '../utils.mjs';
+// Dependencies
+import { getDocblockData } from '../utils.mjs';
 
+// Export Rule
 export default {
 	meta: {
 		type: 'problem',
@@ -10,10 +11,22 @@ export default {
 			recommended: true
 		},
 		fixable: 'code',
-		schema: []
+		schema: [
+			{
+				type: 'object',
+				properties: {
+					language: {
+						type: 'string',
+						enum: ['js', 'ts'],
+						default: 'js'
+					}
+				},
+				additionalProperties: false
+			}
+		]
 	},
 	create(context) {
-		const sourceCode = context.sourceCode || context.getSourceCode();
+		const language = context.options[0]?.language || 'js';
 
 		/**
 		 * Checks if a class is abstract by looking for abstract-related error throws.
@@ -22,21 +35,27 @@ export default {
 		 * @returns {boolean}
 		 */
 		const isClassAbstract = (classNode) => {
-			const methods = classNode.body?.body?.filter((member) => 'MethodDefinition' === member.type) ?? [];
+			if ('ts' === language) {
+				return Boolean(classNode.abstract);
+			}
 
-			for (const method of methods) {
-				const statements = method.value?.body?.body ?? [];
+			const members = classNode.body?.body ?? [];
 
-				for (const stmt of statements) {
-					if (
-						'ThrowStatement' === stmt.type &&
-						'NewExpression' === stmt.argument?.type &&
-						'Error' === stmt.argument?.callee?.name
-					) {
-						const errorMessage = stmt.argument?.arguments?.[0]?.value ?? '';
+			for (const member of members) {
+				if ('MethodDefinition' === member.type) {
+					const statements = member.value?.body?.body ?? [];
 
-						if (errorMessage.includes('abstract')) {
-							return true;
+					for (const stmt of statements) {
+						if (
+							'ThrowStatement' === stmt.type &&
+							'NewExpression' === stmt.argument?.type &&
+							'Error' === stmt.argument?.callee?.name
+						) {
+							const errorMessage = stmt.argument?.arguments?.[0]?.value ?? '';
+
+							if (errorMessage.includes('abstract')) {
+								return true;
+							}
 						}
 					}
 				}
@@ -52,90 +71,84 @@ export default {
 		 * @returns {void}
 		 */
 		const validate = (node) => {
-			if ('ClassDeclaration' !== node.type) return;
+			const docData = getDocblockData(context, node);
+			if (!docData) return;
+			const { docblock, realNode, data, loc } = docData;
+			if ('class' !== realNode.kind) return;
 
-			const docblock = getDocblock(sourceCode, node);
+			// Extract tags and class name
+			const tags      = data[0]?.tags ?? [];
+			const className = realNode.id?.name || '<<anonymous>>';
 
-			if (!docblock) return;
+			// Check if class is abstract
+			if (isClassAbstract(realNode)) {
+				const abstractTags = tags.filter((tag) => 'abstract' === tag.tag);
 
-			const parsed = parse(`/*${docblock.value}*/`);
-
-			if (!parsed) return;
-
-			const tags      = parsed[0]?.tags ?? [];
-			const className = node.id?.name;
-
-			const classTags = tags.filter((tag) => 'class' === tag.tag);
-
-			if (0 === classTags.length) {
-				context.report({
-					loc: getDocLoc(sourceCode, docblock),
-					message: `Class ${className} must have @class tag with class name.`
-				});
-			}
-			else {
-				const classTag     = classTags[0];
-				const tagClassName = classTag.name || classTag.description?.split(' ')[0] || '';
-
-				if (className !== tagClassName) {
+				// Report missing @abstract tag
+				if (!abstractTags.length) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, '@class'),
-						message: `@class tag must specify the correct class name: ${className}.`,
+						loc: docblock.loc,
+						message: `Abstract class ${className} must have @abstract tag.`
+					});
+					return;
+				}
+
+				// Report multiple @abstract tags
+				if (1 < abstractTags.length) {
+					context.report({
+						loc: loc('@abstract', 2),
+						message: `Abstract class ${className} must have only one @abstract tag.`
+					});
+					return;
+				}
+			}
+
+			// Check if class extends another class
+			if (realNode.superClass) {
+				// Prepare @extends tag
+				const extendsTags    = tags.filter((tag) => 'extends' === tag.tag);
+				const superClassName = realNode.superClass.name;
+
+				// Report missing @extends tag
+				if (!extendsTags.length) {
+					context.report({
+						loc: docblock.loc,
+						message: `Class ${className} extends ${superClassName} and must have @extends tag.`
+					});
+					return;
+				}
+
+				// Report multiple @extends tags
+				if (1 < extendsTags.length) {
+					context.report({
+						loc: loc('@extends', 2),
+						message: `Class ${className} extends ${superClassName} and must have exactly one @extends tag.`
+					});
+					return;
+				}
+
+				// Prepare @extends tag
+				const extendsTag        = extendsTags[0];
+				const tagSuperClassName = extendsTag.name || extendsTag.description?.split(' ')[0] || '';
+
+				// Report incorrect @extends tag
+				if (superClassName !== tagSuperClassName) {
+					context.report({
+						loc: loc('@extends'),
+						message: `@extends tag must specify the correct parent class name: ${superClassName}.`,
 						fix(fixer) {
-							const fixed = docblock.value.replace(/@class\s+\S+/, `@class ${className}`);
+							const fixed = docblock.value.replace(/@extends\s+\S+/, `@extends ${superClassName}`);
 							return fixer.replaceText(docblock, `/*${fixed}*/`);
 						}
 					});
 				}
 			}
-
-			// Check if class is abstract
-			if (isClassAbstract(node)) {
-				const abstractTags = tags.filter((tag) => 'abstract' === tag.tag);
-				if (0 === abstractTags.length) {
-					context.report({
-						loc: getDocLoc(sourceCode, docblock),
-						message: `Abstract class ${className} must have @abstract tag.`
-					});
-				}
-			}
-
-			// Check if class extends another class
-			if (node.superClass) {
-				const extendsTags    = tags.filter((tag) => 'extends' === tag.tag);
-				const superClassName = node.superClass.name;
-
-				if (0 === extendsTags.length) {
-					context.report({
-						loc: getDocLoc(sourceCode, docblock),
-						message: `Class ${className} extends ${superClassName} and must have @extends tag.`
-					});
-				}
-				else {
-					const extendsTag        = extendsTags[0];
-					const tagSuperClassName = extendsTag.name || extendsTag.description?.split(' ')[0] || '';
-
-					if (superClassName !== tagSuperClassName) {
-						context.report({
-							loc: getDocLoc(sourceCode, docblock, '@extends'),
-							message: `@extends tag must specify the correct parent class name: ${superClassName}.`,
-							fix(fixer) {
-								const fixed = docblock.value.replace(/@extends\s+\S+/, `@extends ${superClassName}`);
-								return fixer.replaceText(docblock, `/*${fixed}*/`);
-							}
-						});
-					}
-				}
-			}
 		};
-
-		// Create a validator for export declarations.
-		const validateExport = createExportValidator(validate);
 
 		return {
 			ClassDeclaration: validate,
-			ExportNamedDeclaration: validateExport,
-			ExportDefaultDeclaration: validateExport
+			ExportNamedDeclaration: validate,
+			ExportDefaultDeclaration: validate
 		};
 	}
 };

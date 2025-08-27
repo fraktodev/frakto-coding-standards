@@ -1,6 +1,7 @@
-import { parse } from 'comment-parser';
-import { getDocblock, getDocLoc, normalizeTypes, createExportValidator } from '../utils.mjs';
+// Dependencies
+import { getDocblockData, normalizeTypes, getTagRange } from '../utils.mjs';
 
+// Export Rule
 export default {
 	meta: {
 		type: 'problem',
@@ -13,10 +14,8 @@ export default {
 		schema: []
 	},
 	create(context) {
-		const sourceCode = context.sourceCode || context.getSourceCode();
-
 		/**
-		 * Get the parameters for a given node, expanding object destructuring.
+		 * Retrieves the parameters for a given node, expanding object destructuring.
 		 *
 		 * @param {ASTNode} node - The node to get the parameters from.
 		 * @returns {any[]}
@@ -29,11 +28,11 @@ export default {
 				'FunctionExpression' === node.type ||
 				'ArrowFunctionExpression' === node.type
 			) {
-				return expandParams(node.params || []);
+				return expandNodeParams(node.params || []);
 			}
 
 			if ('MethodDefinition' === node.type) {
-				return expandParams(node.value?.params || []);
+				return expandNodeParams(node.value?.params || []);
 			}
 
 			if ('VariableDeclarator' === node.type && node.init) {
@@ -53,7 +52,7 @@ export default {
 				}
 			}
 
-			if (node.params) return expandParams(node.params);
+			if (node.params) return expandNodeParams(node.params);
 
 			return [];
 		};
@@ -64,7 +63,7 @@ export default {
 		 * @param {ASTNode[]} params - The raw parameters from the AST.
 		 * @returns {object[]}
 		 */
-		const expandParams = (params) => {
+		const expandNodeParams = (params) => {
 			const expanded = [];
 
 			for (const param of params) {
@@ -247,6 +246,63 @@ export default {
 		};
 
 		/**
+		 * Retrieves the default value from a real parameter.
+		 *
+		 * @param {ASTNode} realParam - The real parameter from AST.
+		 * @returns {string}
+		 */
+		const getDefaultValue = (realParam) => {
+			if ('AssignmentPattern' === realParam.type && realParam.property) {
+				return getFormattedDefaultValue(realParam.property.value);
+			}
+			else if (realParam.originalParam?.right) {
+				return getFormattedDefaultValue(realParam.originalParam.right);
+			}
+
+			return 'undefined';
+		};
+
+		/**
+		 * Retrieves the expected type for a parameter.
+		 *
+		 * @param {string}  type           - The current documented type.
+		 * @param {ASTNode} realParam      - The real parameter from AST.
+		 * @param {boolean} realIsOptional - Whether the real parameter is optional.
+		 * @returns {{ expectedType:string, validationMessage:string }}
+		 */
+		const getExpectedType = (type, realParam, realIsOptional) => {
+			let expectedType;
+			let validationMessage;
+
+			if (realIsOptional) {
+				if ('AssignmentPattern' === realParam.type && realParam.property) {
+					expectedType = getDefaultValueType(realParam.property.value);
+				}
+				else if (realParam.isParentObject) {
+					expectedType = 'object';
+				}
+				else if (realParam.originalParam?.right) {
+					expectedType = getDefaultValueType(realParam.originalParam.right);
+				}
+				else {
+					expectedType = 'any';
+				}
+			}
+			else {
+				expectedType = normalizeTypes(type);
+
+				if ('array' === type.toLowerCase()) {
+					validationMessage = `Use "TYPE[]" instead of "array". Consider "any[]" if the content type is unknown.`;
+				}
+				else if (type.includes('Array<') && !type.includes('|') && !type.includes('<', type.indexOf('<') + 1)) {
+					validationMessage = `Use "TYPE[]" instead of "Array<TYPE>" for simple types.`;
+				}
+			}
+
+			return { expectedType, validationMessage };
+		};
+
+		/**
 		 * Get the aligned parameters from the tags.
 		 *
 		 * @param {object[]} tags - The tags to get the aligned parameters from.
@@ -276,7 +332,7 @@ export default {
 		/**
 		 * Get the unaligned parameters from the docblock.
 		 *
-		 * @param {docblock} docblock - The docblock to get the unaligned parameters from.
+		 * @param {ASTNode} docblock - The docblock to get the unaligned parameters from.
 		 * @returns {object[]}
 		 */
 		const getUnalignedParams = (docblock) => {
@@ -290,7 +346,7 @@ export default {
 		 * Replaces the parameter lines in the docblock with aligned parameters.
 		 *
 		 * @param {string}   docText       - The original docblock text.
-		 * @param {string[]} alignedParams - The aligned parameter lines.
+		 * @param {object[]} alignedParams - The aligned parameter lines.
 		 * @returns {string}
 		 */
 		const replaceParamLines = (docText, alignedParams) => {
@@ -328,19 +384,18 @@ export default {
 		 * @returns {void}
 		 */
 		const validate = (node) => {
-			const docblock = getDocblock(sourceCode, node);
+			const docData = getDocblockData(context, node);
+			if (!docData) return;
+			const { docblock, realNode, data, loc } = docData;
+			if ('class' === realNode.kind) return;
 
-			if (!docblock) return;
+			// Extract tags and real params
+			const tags       = data[0]?.tags ?? [];
+			const paramTags  = tags.filter((tag) => 'param' === tag.tag);
+			const realParams = getNodeParams(realNode);
 
-			const parsed = parse(`/*${docblock.value}*/`);
-
-			if (!parsed) return;
-
-			const tags       = parsed[0]?.tags ?? [];
-			const docParams  = tags.filter((tag) => 'param' === tag.tag);
-			const realParams = getNodeParams(node);
-
-			if (0 === realParams.length && 0 < docParams.length) {
+			// Report missing @param tags
+			if (0 === realParams.length && 0 < paramTags.length) {
 				context.report({
 					loc: docblock.loc,
 					message: 'Declaration has no parameters but @param tags are present in docblock.'
@@ -348,7 +403,8 @@ export default {
 				return;
 			}
 
-			if (0 < realParams.length && 0 === docParams.length) {
+			// Report unnecessary @param tags
+			if (0 < realParams.length && 0 === paramTags.length) {
 				context.report({
 					loc: docblock.loc,
 					message: 'Declaration has parameters but no @param tags in the docblock.'
@@ -356,7 +412,8 @@ export default {
 				return;
 			}
 
-			if (realParams.length !== docParams.length) {
+			// Report mismatch in number of params vs tags
+			if (realParams.length !== paramTags.length) {
 				context.report({
 					loc: docblock.loc,
 					message: 'Number of parameters in declaration does not match number of @param tags in docblock.'
@@ -364,182 +421,166 @@ export default {
 				return;
 			}
 
-			docParams.forEach((tag, index) => {
-				let { type, name, description, optional: docIsOptional } = tag;
-				const realParam      = realParams[index];
-				const realIsOptional = Boolean(realParam?.hasDefault);
+			// Iterate over @param tags
+			const hasErrors = paramTags.some((paramTag, index) => {
+				const {
+					type,
+					name,
+					description,
+					optional: docIsOptional,
+					source: [source]
+				} = paramTag;
+				const occurrence                                                                                          = index + 1;
+				const realParam                                                                                           = realParams[index];
+				const realIsOptional                                                                                      = Boolean(realParam?.hasDefault);
 
+				// Report missing @param type
 				if (!type) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param`),
+						loc: loc('@param', occurrence),
 						message: `@param must include a type.`
 					});
-					return;
+					return true;
 				}
 
+				// Report missing @param name
 				if (!name) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param`),
+						loc: loc('@param', occurrence),
 						message: `@param must include a name.`
 					});
-					return;
+					return true;
 				}
 
 				const expectedName = realParam?.name;
 
+				// Report mismatch @param name
 				if (expectedName !== name) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name}`),
+						loc: loc('@param', occurrence),
 						message: `@param "${name}" does not match declaration parameter "${expectedName}".`,
 						fix: (fixer) => {
-							const fixed = docblock.value.replace(`@param {${type}} ${name}`, `@param {${type}} ${expectedName}`);
-							return fixer.replaceText(docblock, `/*${fixed}*/`);
+							const range = getTagRange(docblock, source);
+							const fixed = source.source.replace(`{${type}} ${name}`, `{${type}} ${expectedName}`);
+							return fixer.replaceTextRange(range, fixed);
 						}
 					});
-					name = expectedName;
-					return;
+					return true;
 				}
 
-				let expectedType;
-				let validationMessage;
+				const { expectedType, validationMessage } = getExpectedType(type, realParam, realIsOptional);
 
-				if (realIsOptional) {
-					if ('AssignmentPattern' === realParam.type && realParam.property) {
-						expectedType = getDefaultValueType(realParam.property.value);
-					}
-					else if (realParam.isParentObject) {
-						expectedType = 'object';
-					}
-					else if (realParam.originalParam?.right) {
-						expectedType = getDefaultValueType(realParam.originalParam.right);
-					}
-					else {
-						expectedType = 'any';
-					}
-				}
-				else {
-					expectedType = normalizeTypes(type);
-
-					if ('array' === type.toLowerCase()) {
-						validationMessage = `Use "TYPE[]" instead of "array". Consider "any[]" if the content type is unknown.`;
-					}
-					else if (type.includes('Array<') && !type.includes('|') && !type.includes('<', type.indexOf('<') + 1)) {
-						validationMessage = `Use "TYPE[]" instead of "Array<TYPE>" for simple types.`;
-					}
-				}
-
+				// Report mismatch @param type
 				if (expectedType !== type) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name}`),
+						loc: loc('@param', occurrence),
 						message: validationMessage || `@param type is "${type}" but should be "${expectedType}".`,
 						fix: (fixer) => {
-							const fixed = docblock.value.replace(`@param {${type}}`, `@param {${expectedType}}`);
-							return fixer.replaceText(docblock, `/*${fixed}*/`);
+							const range = getTagRange(docblock, source);
+							const fixed = source.source.replace(`{${type}}`, `{${expectedType}}`);
+							return fixer.replaceTextRange(range, fixed);
 						}
 					});
-					type = expectedType;
-					return;
+					return true;
 				}
 
+				// Report unnecessary @param tag default
 				if (docIsOptional) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name}`),
+						loc: loc('@param', occurrence),
 						message: `@param should not be documented as optional with a default value. Only use the parameter name "${name}", without brackets or default assignment.`
 					});
-					name = expectedName;
-					return;
+					return true;
 				}
 
+				// Report missing @param description
 				if (!description) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name}`),
+						loc: loc('@param', occurrence),
 						message: `@param must include a description.`
 					});
-					return;
+					return true;
 				}
 
+				// Report @param description not starting with a dash
 				if (!description.startsWith('-')) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name} ${description}`),
+						loc: loc('@param', occurrence),
 						message: `@param description must start with a dash.`,
 						fix: (fixer) => {
-							const fixed = docblock.value.replace(description, `- ${description}`);
-							return fixer.replaceText(docblock, `/*${fixed}*/`);
+							const range = getTagRange(docblock, source);
+							const fixed = source.source.replace(description, `- ${description}`);
+							return fixer.replaceTextRange(range, fixed);
 						}
 					});
-					return;
+					return true;
 				}
 
+				// Report @param description optional issues
 				if (realIsOptional) {
-					// Get the default value for validation
-					let defaultValue;
-					if ('AssignmentPattern' === realParam.type && realParam.property) {
-						defaultValue = getFormattedDefaultValue(realParam.property.value);
-					}
-					else if (realParam.originalParam?.right) {
-						defaultValue = getFormattedDefaultValue(realParam.originalParam.right);
-					}
-					else {
-						defaultValue = 'undefined';
-					}
-
-					// Expected pattern: "- Optional. [description]. Default: [value]."
+					const defaultValue    = getDefaultValue(realParam);
 					const expectedPattern = new RegExp(
 						`^- Optional\\. .+\\. Default: ${defaultValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.$`
 					);
 
 					if (!expectedPattern.test(description)) {
 						context.report({
-							loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name} ${description}`),
+							loc: loc('@param', occurrence),
 							message: `@param description must follow format: "- Optional. [description]. Default: ${defaultValue}."`,
 							fix: (fixer) => {
-								// Clean the description step by step
 								let cleanDesc = description.replace(/^[-\s]+/, ''); // Remove dash
 								cleanDesc = cleanDesc.replace(/^Optional\.\s*/, ''); // Remove Optional
 								cleanDesc = cleanDesc.replace(/(\.\s*Default:[^.]*\.?)+/g, ''); // Remove all Default: parts
 								cleanDesc = cleanDesc.replace(/\.+$/, ''); // Remove trailing dots
 								cleanDesc = cleanDesc.trim();
 
-								const fixed = docblock.value.replace(
-									description,
-									`- Optional. ${cleanDesc}. Default: ${defaultValue}.`
-								);
-								return fixer.replaceText(docblock, `/*${fixed}*/`);
+								const range = getTagRange(docblock, source);
+								const fixed = source.source.replace(description, `- Optional. ${cleanDesc}. Default: ${defaultValue}.`);
+								return fixer.replaceTextRange(range, fixed);
 							}
 						});
-						return;
+						return true;
 					}
 				}
 
+				// Report @param description not ending with a period
 				if (!description.endsWith('.')) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name} ${description}`),
+						loc: loc('@param', occurrence),
 						message: `@param description must end with a period.`,
 						fix: (fixer) => {
-							const fixed = docblock.value.replace(description, `${description}.`);
-							return fixer.replaceText(docblock, `/*${fixed}*/`);
+							const range = getTagRange(docblock, source);
+							const fixed = source.source.replace(description, `${description}.`);
+							return fixer.replaceTextRange(range, fixed);
 						}
 					});
-					return;
+					return true;
 				}
 
+				// Report excessive @param description length
 				if (100 < description.length) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param {${type}} ${name}`),
-						message: `@param "${name}" description must not exceed 80 characters.`
+						loc: loc('@param', occurrence),
+						message: '@param description must not exceed 100 characters.'
 					});
-					return;
+					return true;
 				}
+
+				return false;
 			});
 
-			const aligned   = getAlignedParams(docParams);
-			const unaligned = getUnalignedParams(docblock);
-			const areEqual  = aligned.every((line, i) => line === unaligned[i]) && aligned.length === unaligned.length;
+			// Early return if there are errors
+			if (hasErrors) return;
 
-			if (!areEqual) {
+			const aligned    = getAlignedParams(paramTags);
+			const unaligned  = getUnalignedParams(docblock);
+			const areAligned = aligned.every((line, i) => line === unaligned[i]) && aligned.length === unaligned.length;
+
+			// Report misaligned @param tags
+			if (!areAligned) {
 				context.report({
-					loc: getDocLoc(sourceCode, docblock, '@param'),
-					message: `@param tags must be aligned consistently.`,
+					loc: docblock.loc,
+					message: '@param tags must be aligned consistently.',
 					fix: (fixer) => {
 						const fixed = replaceParamLines(docblock.value, aligned);
 						return fixer.replaceText(docblock, `/*${fixed}*/`);
@@ -548,14 +589,13 @@ export default {
 			}
 		};
 
-		// Create a validator for export declarations.
-		const validateExport = createExportValidator(validate);
-
 		return {
 			MethodDefinition: validate,
+			FunctionExpression: validate,
 			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validateExport,
-			ExportDefaultDeclaration: validateExport
+			ExportNamedDeclaration: validate,
+			ExportDefaultDeclaration: validate,
+			AssignmentExpression: validate
 		};
 	}
 };

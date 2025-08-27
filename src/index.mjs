@@ -10,8 +10,10 @@ import { spawn } from 'child_process';
 
 /**
  * Frakto Code Auditor - Unified formatter and linter for all supported languages.
+ *
+ * @class FraktoAuditor
  */
-class FraktoAuditor {
+export default class FraktoAuditor {
 	/**
 	 * Constructor - Initialize the auditor with tool handlers and language configurations.
 	 *
@@ -351,6 +353,3 @@ class FraktoAuditor {
 		return response;
 	}
 }
-
-// Export the class itself.
-export default FraktoAuditor;

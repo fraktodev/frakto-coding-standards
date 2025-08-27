@@ -1,6 +1,7 @@
-import { parse } from 'comment-parser';
-import { getDocblock, getDocLoc, normalizeTypes, createExportValidator } from '../utils.mjs';
+// Dependencies
+import { getDocblockData, normalizeTypes, getTagRange } from '../utils.mjs';
 
+// Export Rule
 export default {
 	meta: {
 		type: 'problem',
@@ -13,8 +14,6 @@ export default {
 		schema: []
 	},
 	create(context) {
-		const sourceCode = context.sourceCode || context.getSourceCode();
-
 		/**
 		 * Traverses the given statements to find try-catch blocks.
 		 *
@@ -117,7 +116,7 @@ export default {
 		 * @param {ASTNode} node - The node to check.
 		 * @returns {boolean}
 		 */
-		const hasThrowStatements = (node) => {
+		const hasThrow = (node) => {
 			if (!node.body) return false;
 
 			if ('BlockStatement' === node.body.type) {
@@ -128,126 +127,163 @@ export default {
 		};
 
 		/**
+		 * Creates a signature for a throws tag to detect duplicates.
+		 *
+		 * @param {object} tag - The throws tag object.
+		 * @returns {string}
+		 */
+		const getThrowsSignature = (tag) => {
+			return `${tag.type || 'undefined'}-${tag.name || ''}-${tag.description || ''}`;
+		};
+
+		/**
 		 * Validates the docblock for a given node.
 		 *
 		 * @param {ASTNode} node - The node to validate.
 		 * @returns {void}
 		 */
 		const validate = (node) => {
-			const docblock = getDocblock(sourceCode, node);
+			const docData = getDocblockData(context, node);
+			if (!docData) return;
+			const { docblock, realNode, data, loc } = docData;
+			if ('class' === realNode.kind) return;
 
-			if (!docblock) return;
+			// Extract tags
+			const tags       = data[0]?.tags ?? [];
+			const throwsTags = tags.filter((tag) => 'throw' === tag.tag || 'throws' === tag.tag);
 
-			const parsed = parse(`/*${docblock.value}*/`);
+			// Check if the node has try-catch or throw statements
+			const canThrowErrors = hasTryCatch(realNode) || hasThrow(realNode);
 
-			if (!parsed) return;
-
-			const tags            = parsed[0]?.tags ?? [];
-			const throwsTag       = tags.find((tag) => 'throw' === tag.tag || 'throws' === tag.tag);
-			const hasTryStatement = hasTryCatch(node);
-			const hasThrows       = hasThrowStatements(node);
-			const canThrowErrors  = hasTryStatement || hasThrows;
-
-			if (canThrowErrors && !throwsTag) {
+			// Report missing @throws tag
+			if (canThrowErrors && !throwsTags.length) {
 				context.report({
 					loc: docblock.loc,
-					message: 'Declaration can throw errors but no @throws documentation found.'
+					message: 'Declaration can throw exceptions but no @throws documentation found.'
 				});
 				return;
 			}
 
-			if (!canThrowErrors && throwsTag) {
+			// Report unnecessary @throws tag
+			if (!canThrowErrors && throwsTags.length) {
 				context.report({
-					loc: getDocLoc(sourceCode, docblock, '@throws'),
+					loc: loc('@throw'),
 					message: 'Declaration has @throws documentation but no try-catch blocks or throw statements found.'
 				});
 				return;
 			}
 
-			if (!throwsTag) return;
+			// Early return if no @throws tag is present
+			if (!throwsTags.length) return;
 
-			let { tag: label, type, name, description } = throwsTag;
+			// Check for duplicate @throws tags
+			const throwsSignatures = throwsTags.map(getThrowsSignature);
+			const duplicates       = throwsSignatures.filter((sig, index, arr) => arr.indexOf(sig) !== index);
 
-			if ('throw' === label) {
+			// Report duplicate @throws tags
+			if (duplicates.length) {
 				context.report({
-					loc: getDocLoc(sourceCode, docblock, '@throw'),
-					message: `Use "@throws" instead of "@throw".`,
-					fix: (fixer) => {
-						const fixed = docblock.value.replace('@throw', '@throws');
-						return fixer.replaceText(docblock, `/*${fixed}*/`);
-					}
+					loc: loc('@throw'),
+					message: 'Duplicate @throws tags found. Each exception type should be documented only once.'
 				});
 				return;
 			}
 
-			if (!type) {
-				context.report({
-					loc: getDocLoc(sourceCode, docblock, '@throws'),
-					message: `@throws must include a type.`
-				});
-				return;
-			}
+			// Iterate over @throws tags
+			throwsTags.some((throwsTag, index) => {
+				const {
+					tag: label,
+					type,
+					name,
+					description,
+					source: [source]
+				} = throwsTag;
+				const occurrence                                                                             = index + 1;
 
-			const expectedType = normalizeTypes(type);
+				// Report deprecated @throw tag
+				if ('throw' === label) {
+					context.report({
+						loc: loc('@throw', occurrence),
+						message: `Use "@throws" instead of "@throw".`,
+						fix: (fixer) => {
+							const range = getTagRange(docblock, source);
+							const fixed = source.source.replace('@throw', '@throws');
+							return fixer.replaceTextRange(range, fixed);
+						}
+					});
+					return true;
+				}
 
-			if (expectedType !== type) {
-				context.report({
-					loc: getDocLoc(sourceCode, docblock, `@throws {${type}}`),
-					message: `@throws type is "${type}" but should be "${expectedType}".`,
-					fix: (fixer) => {
-						const fixed = docblock.value.replace(`@throws {${type}}`, `@throws {${expectedType}}`);
-						return fixer.replaceText(docblock, `/*${fixed}*/`);
-					}
-				});
-				type = expectedType;
-				return;
-			}
+				// Report missing @throws type
+				if (!type) {
+					context.report({
+						loc: loc('@throws', occurrence),
+						message: `@throws must include a type.`
+					});
+					return true;
+				}
 
-			let fullDescription = '';
-			if (name) fullDescription += name;
-			if (description) fullDescription += (name ? ' ' : '') + description;
+				const expectedType = normalizeTypes(type);
 
-			if (!fullDescription) {
-				context.report({
-					loc: getDocLoc(sourceCode, docblock, `@throws {${type}}`),
-					message: `@throws must include a description.`
-				});
-				return;
-			}
+				// Report mismatch @throws type
+				if (expectedType !== type) {
+					context.report({
+						loc: loc(`@throws`, occurrence),
+						message: `@throws type is "${type}" but should be "${expectedType}".`,
+						fix: (fixer) => {
+							const range = getTagRange(docblock, source);
+							const fixed = source.source.replace(`{${type}}`, `{${expectedType}}`);
+							return fixer.replaceTextRange(range, fixed);
+						}
+					});
+					return true;
+				}
 
-			if (!fullDescription.endsWith('.')) {
-				context.report({
-					loc: getDocLoc(sourceCode, docblock, `@throws {${type}}`),
-					message: '@throws description must end with a period.',
-					fix: (fixer) => {
-						let contentToFix = `@throws {${type}}`;
-						if (name) contentToFix += ` ${name}`;
-						if (description) contentToFix += ` ${description}`;
+				let fullDescription = '';
+				if (name) fullDescription += name;
+				if (description) fullDescription += (name ? ' ' : '') + description;
 
-						const fixed = docblock.value.replace(contentToFix, `@throws {${type}} ${fullDescription}.`);
-						return fixer.replaceText(docblock, `/*${fixed}*/`);
-					}
-				});
-				return;
-			}
+				// Report missing @throws description
+				if (!fullDescription) {
+					context.report({
+						loc: loc(`@throws`, occurrence),
+						message: `@throws must include a description.`
+					});
+					return true;
+				}
 
-			if (80 < fullDescription.length) {
-				context.report({
-					loc: getDocLoc(sourceCode, docblock, `@throws {${type}}`),
-					message: '@throws description must not exceed 80 characters.'
-				});
-				return;
-			}
+				// Report @throws description not ending with a period
+				if (!fullDescription.endsWith('.')) {
+					context.report({
+						loc: loc(`@throws`, occurrence),
+						message: '@throws description must end with a period.',
+						fix: (fixer) => {
+							const range = getTagRange(docblock, source);
+							const fixed = source.source.replace(description, `${description}.`);
+							return fixer.replaceTextRange(range, fixed);
+						}
+					});
+					return true;
+				}
+
+				// Report excessive @throws description length
+				if (80 < fullDescription.length) {
+					context.report({
+						loc: loc(`@throws`, occurrence),
+						message: '@throws description must not exceed 80 characters.'
+					});
+					return true;
+				}
+			});
 		};
-
-		// Create a validator for export declarations.
-		const validateExport = createExportValidator(validate);
 
 		return {
 			MethodDefinition: validate,
+			FunctionExpression: validate,
 			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validateExport,
-			ExportDefaultDeclaration: validateExport
+			ExportNamedDeclaration: validate,
+			ExportDefaultDeclaration: validate,
+			AssignmentExpression: validate
 		};
 	}
 };

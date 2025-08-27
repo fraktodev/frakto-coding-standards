@@ -1,5 +1,5 @@
-import { parse } from 'comment-parser';
-import { getDocblock, getDocLoc, createExportValidator } from '../utils.mjs';
+// Dependencies
+import { getDocblockData, getTagRange } from '../utils.mjs';
 
 export default {
 	meta: {
@@ -13,43 +13,146 @@ export default {
 		schema: []
 	},
 	create(context) {
-		const sourceCode = context.sourceCode || context.getSourceCode();
-
 		/**
-		 * Get the parameters for a given node.
+		 * Retrieves the parameters for a given node, expanding object destructuring.
 		 *
 		 * @param {ASTNode} node - The node to get the parameters from.
-		 *
 		 * @returns {any[]}
 		 */
 		const getNodeParams = (node) => {
+			if (!node) return [];
+
+			if (
+				'FunctionDeclaration' === node.type ||
+				'FunctionExpression' === node.type ||
+				'ArrowFunctionExpression' === node.type
+			) {
+				return expandNodeParams(node.params || []);
+			}
+
 			if ('MethodDefinition' === node.type) {
-				return node.value?.params || [];
+				return expandNodeParams(node.value?.params || []);
 			}
 
-			// Handle ExportNamedDeclaration and ExportDefaultDeclaration
+			if ('VariableDeclarator' === node.type && node.init) {
+				return getNodeParams(node.init);
+			}
+
 			if ('ExportNamedDeclaration' === node.type || 'ExportDefaultDeclaration' === node.type) {
-				const declaration = node.declaration;
-				if ('VariableDeclaration' === declaration?.type) {
-					// Find the arrow function in the variable declaration
-					const arrowFunction = declaration.declarations?.find(
-						(declarator) => 'ArrowFunctionExpression' === declarator.init?.type
-					)?.init;
-					return arrowFunction?.params || [];
-				}
-				if ('ArrowFunctionExpression' === declaration?.type) {
-					return declaration.params || [];
+				if (node.declaration) {
+					return getNodeParams(node.declaration);
 				}
 			}
 
-			return node.params || [];
+			if ('VariableDeclaration' === node.type && node.declarations) {
+				for (const declarator of node.declarations) {
+					const params = getNodeParams(declarator);
+					if (params.length) return params;
+				}
+			}
+
+			if (node.params) return expandNodeParams(node.params);
+
+			return [];
+		};
+
+		/**
+		 * Expands object patterns and assignment patterns into individual parameters.
+		 *
+		 * @param {ASTNode[]} params - The raw parameters from the AST.
+		 * @returns {object[]}
+		 */
+		const expandNodeParams = (params) => {
+			const expanded = [];
+
+			for (const param of params) {
+				// Case 1: Regular parameter (name, age, etc.)
+				if ('Identifier' === param.type) {
+					expanded.push({
+						name: param.name,
+						type: 'Identifier',
+						hasDefault: false,
+						originalParam: param
+					});
+				}
+				// Case 2: Object destructuring ({ apiKey, timeout })
+				else if ('ObjectPattern' === param.type) {
+					for (const property of param.properties) {
+						if ('Property' === property.type && 'Identifier' === property.key.type) {
+							const hasDefault = 'AssignmentPattern' === property.value.type;
+							expanded.push({
+								name: property.key.name,
+								type: 'ObjectPattern',
+								hasDefault,
+								originalParam: param,
+								property
+							});
+						}
+					}
+				}
+				// Case 3: Assignment with default (user = { name: 'test' })
+				else if ('AssignmentPattern' === param.type) {
+					const leftSide  = param.left;
+					const rightSide = param.right;
+
+					// If left side is identifier and right is object
+					if ('Identifier' === leftSide.type && 'ObjectExpression' === rightSide.type) {
+						// First add the parent object parameter
+						expanded.push({
+							name: leftSide.name,
+							type: 'AssignmentPattern',
+							hasDefault: true,
+							originalParam: param,
+							isParentObject: true
+						});
+
+						// Then add each property as individual parameters
+						for (const property of rightSide.properties) {
+							if ('Property' === property.type && 'Identifier' === property.key.type) {
+								expanded.push({
+									name: `${leftSide.name}.${property.key.name}`,
+									type: 'AssignmentPattern',
+									hasDefault: true,
+									originalParam: param,
+									property,
+									parentName: leftSide.name
+								});
+							}
+						}
+					}
+					// If left side is object destructuring with defaults
+					else if ('ObjectPattern' === leftSide.type) {
+						for (const property of leftSide.properties) {
+							if ('Property' === property.type && 'Identifier' === property.key.type) {
+								expanded.push({
+									name: property.key.name,
+									type: 'ObjectPattern',
+									hasDefault: true,
+									originalParam: param,
+									property
+								});
+							}
+						}
+					}
+					// Regular parameter with default (name = 'default')
+					else if ('Identifier' === leftSide.type) {
+						expanded.push({
+							name: leftSide.name,
+							type: 'AssignmentPattern',
+							hasDefault: true,
+							originalParam: param
+						});
+					}
+				}
+			}
+
+			return expanded;
 		};
 
 		/**
 		 * Get the name of a specific parameter.
 		 *
 		 * @param {ASTNode} param - The parameter to get the name from.
-		 *
 		 * @returns {string}
 		 */
 		const getParamName = (param) => {
@@ -63,7 +166,6 @@ export default {
 		 * Get the aligned parameters from the tags.
 		 *
 		 * @param {object[]} tags - The tags to get the aligned parameters from.
-		 *
 		 * @returns {object[]}
 		 */
 		const getAlignedParams = (tags) => {
@@ -85,8 +187,7 @@ export default {
 		/**
 		 * Get the unaligned parameters from the docblock.
 		 *
-		 * @param {docblock} docblock - The docblock to get the unaligned parameters from.
-		 *
+		 * @param {ASTNode} docblock - The docblock to get the unaligned parameters from.
 		 * @returns {object[]}
 		 */
 		const getUnalignedParams = (docblock) => {
@@ -100,8 +201,7 @@ export default {
 		 * Replaces the parameter lines in the docblock with aligned parameters.
 		 *
 		 * @param {string}   docText       - The original docblock text.
-		 * @param {string[]} alignedParams - The aligned parameter lines.
-		 *
+		 * @param {object[]} alignedParams - The aligned parameter lines.
 		 * @returns {string}
 		 */
 		const replaceParamLines = (docText, alignedParams) => {
@@ -136,23 +236,21 @@ export default {
 		 * Validates the docblock for a given node.
 		 *
 		 * @param {ASTNode} node - The node to validate.
-		 *
 		 * @returns {void}
 		 */
 		const validate = (node) => {
-			const docblock = getDocblock(sourceCode, node);
+			const docData = getDocblockData(context, node);
+			if (!docData) return;
+			const { docblock, realNode, data, loc } = docData;
+			if ('class' === realNode.kind) return;
 
-			if (!docblock) return;
+			// Extract tags and real params
+			const tags       = data[0]?.tags ?? [];
+			const paramTags  = tags.filter((tag) => 'param' === tag.tag);
+			const realParams = getNodeParams(realNode);
 
-			const parsed = parse(`/*${docblock.value}*/`);
-
-			if (!parsed) return;
-
-			const tags      = parsed[0]?.tags ?? [];
-			const paramTags = tags.filter((tag) => 'param' === tag.tag);
-			const params    = getNodeParams(node);
-
-			if (0 === params.length && 0 < paramTags.length) {
+			// Report missing @param tags
+			if (0 === realParams.length && 0 < paramTags.length) {
 				context.report({
 					loc: docblock.loc,
 					message: 'Declaration has no parameters but @param tags are present in docblock.'
@@ -160,7 +258,8 @@ export default {
 				return;
 			}
 
-			if (0 < params.length && 0 === paramTags.length) {
+			// Report unnecessary @param tags
+			if (0 < realParams.length && 0 === paramTags.length) {
 				context.report({
 					loc: docblock.loc,
 					message: 'Declaration has parameters but no @param tags in the docblock.'
@@ -168,7 +267,8 @@ export default {
 				return;
 			}
 
-			if (params.length !== paramTags.length) {
+			// Report mismatch in number of params vs tags
+			if (realParams.length !== paramTags.length) {
 				context.report({
 					loc: docblock.loc,
 					message: 'Number of parameters in declaration does not match number of @param tags in docblock.'
@@ -176,97 +276,120 @@ export default {
 				return;
 			}
 
-			paramTags.forEach((tag, index) => {
-				let { type, name, description } = tag;
+			// Iterate over @param tags
+			const hasErrors = paramTags.some((paramTag, index) => {
+				const {
+					type,
+					name,
+					description,
+					optional: docIsOptional,
+					source: [source]
+				} = paramTag;
+				const occurrence                                                                                          = index + 1;
+				const realParam                                                                                           = realParams[index];
 
+				// Report @param type presence
 				if (type) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param`),
+						loc: loc('@param', occurrence),
 						message: `@param must not include a type.`
 					});
-					return;
+					return true;
 				}
 
+				// Report missing @param name
 				if (!name) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param`),
+						loc: loc('@param', occurrence),
 						message: `@param must include a name.`
 					});
-					return;
+					return true;
 				}
 
-				const realParam    = params[index];
 				const expectedName = getParamName(realParam);
 
+				// Report mismatch @param name
 				if (expectedName !== name) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param ${name}`),
+						loc: loc('@param', occurrence),
 						message: `@param name "${name}" does not match declaration parameter "${expectedName}".`,
 						fix: (fixer) => {
-							const fixed = docblock.value.replace(`@param ${name}`, `@param ${expectedName}`);
-							return fixer.replaceText(docblock, `/*${fixed}*/`);
+							const range = getTagRange(docblock, source);
+							const fixed = source.source.replace(`@param ${name}`, `@param ${expectedName}`);
+							return fixer.replaceTextRange(range, fixed);
 						}
 					});
-					name = expectedName;
-					return;
+					return true;
 				}
 
+				// Report unnecessary @param tag default
+				if (docIsOptional) {
+					context.report({
+						loc: loc('@param', occurrence),
+						message: `@param should not be documented as optional with a default value. Only use the parameter name "${name}", without brackets or default assignment.`
+					});
+					return true;
+				}
+
+				// Report missing @param description
 				if (!description) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param`),
-						message: `@param "${name}" must include a description.`
+						loc: loc('@param', occurrence),
+						message: `@param must include a description.`
 					});
-					return;
+					return true;
 				}
 
+				// Report @param description not starting with a dash
 				if (!description.startsWith('-')) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param ${name}`),
-						message: `@param "${name}" description must start with a dash.`,
+						loc: loc('@param', occurrence),
+						message: `@param description must start with a dash.`,
 						fix: (fixer) => {
-							const fixed = docblock.value.replace(description, `- ${description}`);
-							return fixer.replaceText(docblock, `/*${fixed}*/`);
+							const range = getTagRange(docblock, source);
+							const fixed = source.source.replace(description, `- ${description}`);
+							return fixer.replaceTextRange(range, fixed);
 						}
 					});
-					return;
+					return true;
 				}
 
+				// Report @param description not ending with a period
 				if (!description.endsWith('.')) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param ${name}`),
-						message: `@param "${name}" description must end with a period.`,
+						loc: loc('@param', occurrence),
+						message: `@param description must end with a period.`,
 						fix: (fixer) => {
-							const fixed = docblock.value.replace(description, `${description}.`);
-							return fixer.replaceText(docblock, `/*${fixed}*/`);
+							const range = getTagRange(docblock, source);
+							const fixed = source.source.replace(description, `${description}.`);
+							return fixer.replaceTextRange(range, fixed);
 						}
 					});
-					return;
+					return true;
 				}
 
-				if (10 > description.length) {
+				// Report excessive @param description length
+				if (100 < description.length) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param ${name}`),
-						message: `@param "${name}" description must be at least 10 characters long.`
+						loc: loc('@param', occurrence),
+						message: '@param description must not exceed 100 characters.'
 					});
-					return;
+					return true;
 				}
 
-				if (80 < description.length) {
-					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@param ${name}`),
-						message: `@param "${name}" description must not exceed 80 characters.`
-					});
-					return;
-				}
+				return false;
 			});
 
-			const aligned   = getAlignedParams(paramTags);
-			const unaligned = getUnalignedParams(docblock);
-			const areEqual  = aligned.every((line, i) => line === unaligned[i]) && aligned.length === unaligned.length;
+			// Early return if there are errors
+			if (hasErrors) return;
 
-			if (!areEqual) {
+			const aligned    = getAlignedParams(paramTags);
+			const unaligned  = getUnalignedParams(docblock);
+			const areAligned = aligned.every((line, i) => line === unaligned[i]) && aligned.length === unaligned.length;
+
+			if (!areAligned) {
 				context.report({
-					loc: getDocLoc(sourceCode, docblock, '@param'),
+					loc: docblock.loc,
 					message: `@param tags must be aligned consistently.`,
 					fix: (fixer) => {
 						const fixed = replaceParamLines(docblock.value, aligned);
@@ -276,14 +399,13 @@ export default {
 			}
 		};
 
-		// Create a validator for export declarations.
-		const validateExport = createExportValidator(validate);
-
 		return {
 			MethodDefinition: validate,
+			FunctionExpression: validate,
 			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validateExport,
-			ExportDefaultDeclaration: validateExport
+			ExportNamedDeclaration: validate,
+			ExportDefaultDeclaration: validate,
+			AssignmentExpression: validate
 		};
 	}
 };

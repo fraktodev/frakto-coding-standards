@@ -1,6 +1,7 @@
-import { parse } from 'comment-parser';
-import { getDocblock, getDocLoc, createExportValidator } from '../utils.mjs';
+// Dependencies
+import { getDocblockData } from '../utils.mjs';
 
+// Export Rule
 export default {
 	meta: {
 		type: 'problem',
@@ -13,10 +14,8 @@ export default {
 		schema: []
 	},
 	create(context) {
-		const sourceCode = context.sourceCode || context.getSourceCode();
-
 		/**
-		 * Get tag lines with their indices.
+		 * Retrieves tag lines with their indices.
 		 *
 		 * @param {string[]} lines - The docblock lines.
 		 * @returns {object[]}
@@ -26,33 +25,60 @@ export default {
 		};
 
 		/**
+		 * Removes blank lines between tags.
+		 *
+		 * @param {string[]} lines    - The docblock lines.
+		 * @param {object[]} tagLines - The tag lines with their indices.
+		 * @returns {string}
+		 */
+		const removeBlankLinesBetweenTags = (lines, tagLines) => {
+			const newLines = [];
+
+			for (let j = 0; j < lines.length; j++) {
+				const line        = lines[j];
+				const isBlankLine = '*' === line.trim();
+
+				if (isBlankLine) {
+					const prevTagIndex = tagLines.findIndex(({ index }) => index < j);
+					const nextTagIndex = tagLines.findIndex(({ index }) => index > j);
+
+					if (-1 !== prevTagIndex && -1 !== nextTagIndex) {
+						continue;
+					}
+				}
+
+				newLines.push(line);
+			}
+
+			return newLines.join('\n');
+		};
+
+		/**
 		 * Validates the docblock for a given node.
 		 *
 		 * @param {ASTNode} node - The node to validate.
 		 * @returns {void}
 		 */
 		const validate = (node) => {
-			const docblock = getDocblock(sourceCode, node);
+			const docData = getDocblockData(context, node);
+			if (!docData) return;
+			const { docblock, data, loc } = docData;
 
-			if (!docblock) return;
+			// Extract description and tags
+			const description = data[0]?.description?.trim() ?? '';
+			const tags        = data[0]?.tags ?? [];
 
-			const parsed = parse(`/*${docblock.value}*/`);
-
-			if (!parsed) return;
-
-			const description   = parsed[0]?.description?.trim() ?? '';
-			const tags          = parsed[0]?.tags ?? [];
-
+			// Extract lines
 			const lines         = docblock.value.split('\n');
 			const firstTagIndex = lines.findIndex((line) => line.trim().startsWith('* @'));
 
-			// Description spacing.
+			// Report missing blank line after description
 			if (description && 0 < tags.length) {
 				const hasLineAfterDescription = 0 < firstTagIndex && '*' === lines[firstTagIndex - 1]?.trim();
 
 				if (!hasLineAfterDescription) {
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, description),
+						loc: loc(description),
 						message: 'There must be a blank line after the description.'
 					});
 					return;
@@ -69,44 +95,23 @@ export default {
 				const hasBlankBetween = lines.slice(currentIndex + 1, nextIndex).some((l) => '*' === l.trim());
 
 				if (hasBlankBetween) {
-					// Get the tag name from the current line to use in location
 					const currentTagMatch = tagLines[i].line.match(/@(\w+)/);
 					const currentTagName  = currentTagMatch ? currentTagMatch[1] : 'param';
 
+					// Report blank line between tags
 					context.report({
-						loc: getDocLoc(sourceCode, docblock, `@${currentTagName}`),
+						loc: loc(`@${currentTagName}`),
 						message: 'Do not add blank lines between docblock tags. All tags must be together.',
 						fix: (fixer) => {
-							// Create new lines array without blank lines between tags
-							const newLines = [];
-
-							for (let j = 0; j < lines.length; j++) {
-								const line        = lines[j];
-								const isBlankLine = '*' === line.trim();
-
-								// If it's a blank line, check if it's between tags
-								if (isBlankLine) {
-									const prevTagIndex = tagLines.findIndex(({ index }) => index < j);
-									const nextTagIndex = tagLines.findIndex(({ index }) => index > j);
-
-									// If there's a tag before and after this blank line, skip it
-									if (-1 !== prevTagIndex && -1 !== nextTagIndex) {
-										continue;
-									}
-								}
-
-								newLines.push(line);
-							}
-
-							const fixed = newLines.join('\n');
+							const fixed = removeBlankLinesBetweenTags(lines, tagLines);
 							return fixer.replaceText(docblock, `/*${fixed}*/`);
 						}
 					});
-					break;
+					return;
 				}
 			}
 
-			// No blank line after last tag
+			// Report blank line after last tag
 			if (0 < tagLines.length) {
 				const lastTagIndex      = tagLines[tagLines.length - 1].index;
 				const remainingLines    = lines.slice(lastTagIndex + 1);
@@ -129,14 +134,16 @@ export default {
 						},
 						message: 'Unexpected blank line after last docblock tag.'
 					});
+					return;
 				}
 			}
 
-			// No double blank lines
+			// Report double blank lines
 			let blankLineCount = 0;
 			for (let i = 0; i < lines.length; i++) {
 				const line = lines[i].trim();
 
+				if ('*' !== line) blankLineCount = 0;
 				if ('*' === line) {
 					blankLineCount++;
 					if (1 < blankLineCount) {
@@ -153,24 +160,20 @@ export default {
 							},
 							message: 'Multiple consecutive blank lines are not allowed in docblocks.'
 						});
-						break;
+						return;
 					}
-				}
-				else {
-					blankLineCount = 0;
 				}
 			}
 		};
 
-		// Create a validator for export declarations.
-		const validateExport = createExportValidator(validate);
-
 		return {
 			ClassDeclaration: validate,
 			MethodDefinition: validate,
+			FunctionExpression: validate,
 			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validateExport,
-			ExportDefaultDeclaration: validateExport
+			ExportNamedDeclaration: validate,
+			ExportDefaultDeclaration: validate,
+			AssignmentExpression: validate
 		};
 	}
 };

@@ -1,6 +1,7 @@
-import { parse } from 'comment-parser';
-import { getDocblock, createExportValidator } from '../utils.mjs';
+// Dependencies
+import { getDocblockData } from '../utils.mjs';
 
+// Export Rule
 export default {
 	meta: {
 		type: 'problem',
@@ -13,8 +14,6 @@ export default {
 		schema: []
 	},
 	create(context) {
-		const sourceCode = context.sourceCode || context.getSourceCode();
-
 		/**
 		 * Validates the docblock for a given node.
 		 *
@@ -22,24 +21,29 @@ export default {
 		 * @returns {void}
 		 */
 		const validate = (node) => {
-			const docblock = getDocblock(sourceCode, node);
+			const docData = getDocblockData(context, node);
+			if (!docData) return;
+			const { docblock, data } = docData;
 
-			if (!docblock) return;
+			// Extract tags
+			const tags = data[0]?.tags ?? [];
 
-			const parsed = parse(`/*${docblock.value}*/`);
+			// Early return if no tags are present
+			if (!tags.length) return;
 
-			if (!parsed) return;
-
-			const tags = parsed[0]?.tags ?? [];
-
-			if (0 === tags.length) return;
-
-			const expectedOrder = ['param', 'throws'];
+			// Prepare tags order
+			const expectedOrder = ['see', 'deprecated', 'abstract', 'extends', 'param', 'throws', 'returns'];
 			const actualOrder   = [];
+			const correctOrder  = [];
 			const presentTags   = new Set();
 
+			// Collect actual tags in order of appearance
 			for (const tag of tags) {
-				const tagName = 'return' === tag.tag ? 'returns' : tag.tag;
+				const tagName = tag.tag;
+
+				if (!expectedOrder.includes(tagName)) {
+					continue;
+				}
 
 				if (!presentTags.has(tagName)) {
 					actualOrder.push(tagName);
@@ -47,27 +51,25 @@ export default {
 				}
 			}
 
-			const correctOrder = [];
-
+			// Collect correct tags in order
 			expectedOrder.forEach((tagType) => {
 				if (presentTags.has(tagType)) {
 					correctOrder.push(tagType);
 				}
 			});
 
+			// Collect incorrect tags
 			actualOrder.forEach((tagType) => {
-				if (!expectedOrder.includes(tagType) && 'returns' !== tagType) {
+				if (!expectedOrder.includes(tagType)) {
 					correctOrder.push(tagType);
 				}
 			});
 
-			if (presentTags.has('returns')) {
-				correctOrder.push('returns');
-			}
-
+			// Check if the order is correct
 			const isCorrectOrder =
 				actualOrder.length === correctOrder.length && actualOrder.every((tag, index) => tag === correctOrder[index]);
 
+			// Report incorrect order
 			if (!isCorrectOrder) {
 				const orderMessage = correctOrder.map((tag) => `@${tag}`).join(' → ');
 				context.report({
@@ -77,14 +79,14 @@ export default {
 			}
 		};
 
-		// Create a validator for export declarations.
-		const validateExport = createExportValidator(validate);
-
 		return {
+			ClassDeclaration: validate,
 			MethodDefinition: validate,
+			FunctionExpression: validate,
 			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validateExport,
-			ExportDefaultDeclaration: validateExport
+			ExportNamedDeclaration: validate,
+			ExportDefaultDeclaration: validate,
+			AssignmentExpression: validate
 		};
 	}
 };

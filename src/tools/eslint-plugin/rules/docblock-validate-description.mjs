@@ -1,6 +1,7 @@
-import { parse } from 'comment-parser';
-import { getDocblock, getDocLoc, createExportValidator } from '../utils.mjs';
+// Dependencies
+import { getDocblockData } from '../utils.mjs';
 
+// Export Rule
 export default {
 	meta: {
 		type: 'problem',
@@ -13,8 +14,6 @@ export default {
 		schema: []
 	},
 	create(context) {
-		const sourceCode = context.sourceCode || context.getSourceCode();
-
 		/**
 		 * Validates the docblock for a given node.
 		 *
@@ -22,39 +21,27 @@ export default {
 		 * @returns {void}
 		 */
 		const validate = (node) => {
-			const docblock = getDocblock(sourceCode, node);
+			const docData = getDocblockData(context, node);
+			if (!docData) return;
+			const { docblock, realNode, data, loc } = docData;
 
-			if (!docblock) return;
+			// Extract description
+			const description = data[0]?.description?.trim() ?? '';
 
-			const parsed = parse(`/*${docblock.value}*/`);
-
-			if (!parsed) return;
-
-			const description = parsed[0]?.description?.trim() ?? '';
-
+			// Report missing description
 			if (!description) {
 				context.report({
-					loc: {
-						start: {
-							line: docblock.loc.start.line + 1,
-							column: docblock.loc.start.column + 1
-						},
-						end: {
-							line: docblock.loc.start.line + 1,
-							column: docblock.loc.start.column + 2
-						}
-					},
+					loc: docblock.loc,
 					message: 'Docblock must have a description.'
 				});
 
 				return;
 			}
 
-			const loc = getDocLoc(sourceCode, docblock, description);
-
+			// Report missing period
 			if (!description.endsWith('.')) {
 				context.report({
-					loc,
+					loc: loc(description),
 					message: 'Docblock description must end with a period.',
 					fix: (fixer) => {
 						const fixed = docblock.value.replace(description, `${description}.`);
@@ -64,31 +51,36 @@ export default {
 				return;
 			}
 
-			if (20 > description.length) {
+			// Prepare min length
+			const min = 'class' === realNode.kind ? 50 : 10;
+
+			// Report short description
+			if (min > description.length) {
 				context.report({
-					loc: loc,
-					message: 'Docblock description must be at least 20 characters long.'
+					loc: loc(description),
+					message: `Docblock description for ${realNode.kind} must be at least ${min} characters long.`
 				});
 				return;
 			}
 
+			// Report too long description
 			if (400 < description.length) {
 				context.report({
-					loc: loc,
-					message: 'Docblock description must not exceed 400 characters.'
+					loc: loc(description),
+					message: `Docblock description for ${realNode.kind} must not exceed 400 characters.`
 				});
+				return;
 			}
 		};
-
-		// Create a validator for export declarations.
-		const validateExport = createExportValidator(validate);
 
 		return {
 			ClassDeclaration: validate,
 			MethodDefinition: validate,
+			FunctionExpression: validate,
 			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validateExport,
-			ExportDefaultDeclaration: validateExport
+			ExportNamedDeclaration: validate,
+			ExportDefaultDeclaration: validate,
+			AssignmentExpression: validate
 		};
 	}
 };
