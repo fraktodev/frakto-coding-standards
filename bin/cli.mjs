@@ -6,6 +6,7 @@ import pc from 'picocolors';
 import path from 'node:path';
 import process from 'node:process';
 import fraktoAuditor from '../src/index.mjs';
+
 import { readFileSync, writeFileSync } from 'node:fs';
 
 // CLI
@@ -26,8 +27,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 	}
 
 	try {
-		const content     = readFileSync(filePath, 'utf8');
-		const ext         = path.extname(filePath).toLowerCase();
+		const content = readFileSync(filePath, 'utf8');
+		const ext     = path.extname(filePath).toLowerCase();
 
 		const languageMap = {
 			'.js': 'javascript',
@@ -51,8 +52,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 			'.yml': 'yaml'
 		};
 
-		const language    = languageMap[ext];
-		const request     = {
+		const language = languageMap[ext];
+		const request = {
 			mode,
 			content,
 			filePath: path.resolve(filePath),
@@ -62,8 +63,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 			workspacePath: path.dirname(path.resolve(filePath))
 		};
 
-		const auditor     = new fraktoAuditor();
-		const response    = await auditor.audit(language, request);
+		const auditor  = new fraktoAuditor();
+		const response = await auditor.audit(language, request);
 
 		if (['format', 'both'].includes(mode) && null !== response.formatted) {
 			if (response.formatted === content) {

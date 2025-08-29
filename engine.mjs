@@ -19,6 +19,7 @@ export const throwError = (message) => {
 /**
  * Retrieves and validates the payload from the environment variable.
  *
+ * @throws {Error} If the payload is invalid or missing.
  * @returns {payload}
  */
 export const getPayload = () => {

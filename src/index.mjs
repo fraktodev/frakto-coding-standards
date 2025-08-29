@@ -6,12 +6,10 @@ import emojiLinter from './tools/emoji-linter/index.mjs';
 import HTMLFormatter from './tools/html-formatter/index.mjs';
 
 import { ESLint } from 'eslint';
-import { spawn } from 'child_process';
+import { spawn } from 'node:child_process';
 
 /**
  * Frakto Code Auditor - Unified formatter and linter for all supported languages.
- *
- * @class FraktoAuditor
  */
 export default class FraktoAuditor {
 	/**
@@ -160,8 +158,8 @@ export default class FraktoAuditor {
 
 				// Lint with PHPCS.
 				if (['lint', 'both'].includes(mode)) {
-					const phpcsPath        = path.join(config.vendorPath, 'bin/phpcs');
-					const diagnostic       = await new Promise((resolve, reject) => {
+					const phpcsPath = path.join(config.vendorPath, 'bin/phpcs');
+					const diagnostic = await new Promise((resolve, reject) => {
 						let stdout = '';
 						let stderr = '';
 						const child = spawn('php', [phpcsPath, `--standard=${standard}`, '--report=json', '-']);
@@ -314,6 +312,7 @@ export default class FraktoAuditor {
 	 *
 	 * @param {string} language - The language to process.
 	 * @param {object} request  - The request object containing content and options.
+	 * @throws {Error} If the language is unsupported.
 	 * @returns {Promise<object>}
 	 */
 	async audit(language, request) {

@@ -159,7 +159,7 @@ export default {
 		const analyzeArrayElements = (elements) => {
 			if (0 === elements.length) return 'any[]';
 
-			const types       = elements.map((element) => {
+			const types = elements.map((element) => {
 				if ('Literal' === element.type) {
 					if (null === element.value) return 'null';
 					return typeof element.value;
@@ -309,7 +309,7 @@ export default {
 		 * @returns {object[]}
 		 */
 		const getAlignedParams = (tags) => {
-			const mapped  = tags.map((tag) => {
+			const mapped = tags.map((tag) => {
 				const nameFormatted = tag.optional ? `[${tag.name}${tag.default ? `=${tag.default}` : ''}]` : tag.name;
 
 				return {
@@ -517,7 +517,7 @@ export default {
 
 				// Report @param description optional issues
 				if (realIsOptional) {
-					const defaultValue    = getDefaultValue(realParam);
+					const defaultValue = getDefaultValue(realParam);
 					const expectedPattern = new RegExp(
 						`^- Optional\\. .+\\. Default: ${defaultValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.$`
 					);

@@ -72,6 +72,8 @@ export default {
 		version: '0.1.0'
 	},
 	rules: {
+		'node-prefix-imports': rules['node-prefix-imports'],
+		'pine-tree-imports': rules['pine-tree-imports'],
 		'align-variables': rules['align-variables'],
 		'separate-control-keywords': rules['separate-control-keywords'],
 		'prefer-named-functions': rules['prefer-named-functions'],
@@ -93,6 +95,8 @@ export default {
 		'recommended-js': {
 			rules: {
 				...commonRules,
+				'frakto/node-prefix-imports': 'warn',
+				'frakto/pine-tree-imports': 'warn',
 				'frakto/align-variables': 'error',
 				'frakto/separate-control-keywords': 'error',
 				'frakto/prefer-named-functions': 'error',
@@ -113,6 +117,8 @@ export default {
 		'recommended-ts': {
 			rules: {
 				...commonRules,
+				'frakto/node-prefix-imports': 'warn',
+				'frakto/pine-tree-imports': 'warn',
 				'frakto/align-variables': 'error',
 				'frakto/separate-control-keywords': 'error',
 				'frakto/prefer-named-functions': 'error',

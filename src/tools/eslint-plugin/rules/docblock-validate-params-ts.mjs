@@ -169,7 +169,7 @@ export default {
 		 * @returns {object[]}
 		 */
 		const getAlignedParams = (tags) => {
-			const mapped  = tags.map((tag) => {
+			const mapped = tags.map((tag) => {
 				return {
 					name: tag.name,
 					desc: tag.description.trim().replace(/^-/, '').trim()

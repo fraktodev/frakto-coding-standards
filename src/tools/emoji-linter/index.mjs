@@ -3,8 +3,6 @@ import fs from 'node:fs';
 
 /**
  * Frakto Emoji Linter a class for linting and fixing emoji usage in text.
- *
- * @class EmojiLinter
  */
 class EmojiLinter {
 	static severities = {

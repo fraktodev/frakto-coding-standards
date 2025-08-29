@@ -2,8 +2,6 @@
  * HTML Formatter - Removes trailing slashes from self-closing HTML tags.
  * This class provides HTML formatting functionality to conform to HTML5 standards
  * by removing trailing slashes from void elements.
- *
- * @class HTMLFormatter
  */
 class HTMLFormatter {
 	/**

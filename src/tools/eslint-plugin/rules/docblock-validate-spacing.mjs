@@ -113,8 +113,8 @@ export default {
 
 			// Report blank line after last tag
 			if (0 < tagLines.length) {
-				const lastTagIndex      = tagLines[tagLines.length - 1].index;
-				const remainingLines    = lines.slice(lastTagIndex + 1);
+				const lastTagIndex   = tagLines[tagLines.length - 1].index;
+				const remainingLines = lines.slice(lastTagIndex + 1);
 				const hasBlankAfterLast = remainingLines.some((line, index) => {
 					const trimmed = line.trim();
 					return '*' === trimmed && index < remainingLines.length - 1;

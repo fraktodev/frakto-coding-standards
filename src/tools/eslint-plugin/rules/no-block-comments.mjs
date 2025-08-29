@@ -23,7 +23,7 @@ export default {
 		 * @returns {string}
 		 */
 		const convertToLineComments = (commentValue) => {
-			const lines          = commentValue.split('\n');
+			const lines = commentValue.split('\n');
 			const convertedLines = lines
 				.map((line, index) => {
 					const trimmedLine = line.trim();
