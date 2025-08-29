@@ -23,10 +23,10 @@ export default {
 		const validate = (node) => {
 			const docData = getDocblockData(context, node);
 			if (!docData) return;
-			const { docblock, realNode, data, loc } = docData;
+			const { docblock, data, loc } = docData;
 
 			// Extract description
-			const description = data[0]?.description?.trim() ?? '';
+			const description = data.description?.trim() ?? '';
 
 			// Report missing description
 			if (!description) {
@@ -34,7 +34,6 @@ export default {
 					loc: docblock.loc,
 					message: 'Docblock must have a description.'
 				});
-
 				return;
 			}
 
@@ -51,14 +50,15 @@ export default {
 				return;
 			}
 
-			// Prepare min length
-			const min = 'class' === realNode.kind ? 50 : 10;
+			const isClass  = 'ClassDeclaration' === node.type || 'ClassExpression' === node.type;
+			const nodeType = isClass ? 'class' : 'function';
+			const min      = isClass ? 50 : 10;
 
 			// Report short description
 			if (min > description.length) {
 				context.report({
 					loc: loc(description),
-					message: `Docblock description for ${realNode.kind} must be at least ${min} characters long.`
+					message: `Docblock description for ${nodeType} must be at least ${min} characters long.`
 				});
 				return;
 			}
@@ -67,7 +67,7 @@ export default {
 			if (400 < description.length) {
 				context.report({
 					loc: loc(description),
-					message: `Docblock description for ${realNode.kind} must not exceed 400 characters.`
+					message: `Docblock description for ${nodeType} must not exceed 400 characters.`
 				});
 				return;
 			}
@@ -75,12 +75,9 @@ export default {
 
 		return {
 			ClassDeclaration: validate,
-			MethodDefinition: validate,
+			ClassExpression: validate,
 			FunctionExpression: validate,
-			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validate,
-			ExportDefaultDeclaration: validate,
-			AssignmentExpression: validate
+			ArrowFunctionExpression: validate
 		};
 	}
 };

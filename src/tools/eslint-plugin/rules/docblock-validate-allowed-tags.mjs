@@ -37,11 +37,11 @@ export default {
 		const validate = (node) => {
 			const docData = getDocblockData(context, node);
 			if (!docData) return;
-			const { realNode, data, loc } = docData;
+			const { data, loc } = docData;
 
 			// Extract examples and tags
-			const examples = data[0]?.examples ?? [];
-			const tags     = data[0]?.tags ?? [];
+			const examples = data.examples ?? [];
+			const tags     = data.tags ?? [];
 
 			// Report disallowed examples
 			if (0 < examples.length) {
@@ -53,12 +53,11 @@ export default {
 			}
 
 			// Prepare allowed tags
-			let allowedTags = [];
-			if ('class' === realNode.kind) {
+			let nodeType    = 'function';
+			let allowedTags = ['param', 'throws', 'throw', 'see', 'deprecated', 'returns', 'return'];
+			if ('ClassDeclaration' === node.type || 'ClassExpression' === node.type) {
+				nodeType = 'class';
 				allowedTags = ['abstract', 'extends', 'see', 'deprecated'];
-			}
-			else if ('js' === language) {
-				allowedTags = ['param', 'throws', 'throw', 'see', 'deprecated', 'returns', 'return'];
 			}
 			else if ('ts' === language) {
 				allowedTags = ['param', 'throws', 'throw', 'see', 'deprecated'];
@@ -72,13 +71,14 @@ export default {
 						loc: loc(`@${tag.tag}`),
 						message: '@todo must be inserted in to docblock description (e.g. TODO: Fix the bug)'
 					});
+					return;
 				}
 
 				// Report disallowed tags
 				if (!allowedTags.includes(tag.tag)) {
 					context.report({
 						loc: loc(`@${tag.tag}`),
-						message: `@${tag.tag} tag is not allowed in ${realNode.kind} docblocks. Allowed tags: ${allowedTags.join(', ')}.`
+						message: `@${tag.tag} tag is not allowed in ${nodeType} docblocks. Allowed tags: ${allowedTags.join(', ')}.`
 					});
 				}
 			});
@@ -86,12 +86,9 @@ export default {
 
 		return {
 			ClassDeclaration: validate,
-			MethodDefinition: validate,
+			ClassExpression: validate,
 			FunctionExpression: validate,
-			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validate,
-			ExportDefaultDeclaration: validate,
-			AssignmentExpression: validate
+			ArrowFunctionExpression: validate
 		};
 	}
 };

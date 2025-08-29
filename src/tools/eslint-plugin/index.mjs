@@ -69,12 +69,14 @@ const commonRules = {
 export default {
 	meta: {
 		name: 'frakto-eslint-plugin',
-		version: '1.0.0'
+		version: '0.1.0'
 	},
 	rules: {
 		'align-variables': rules['align-variables'],
 		'separate-control-keywords': rules['separate-control-keywords'],
-		'block-comments': rules['block-comments'],
+		'no-commented-code': rules['no-commented-code'],
+		'no-block-comments': rules['no-block-comments'],
+		'docblock-require': rules['docblock-require'],
 		'docblock-validate-allowed-tags': rules['docblock-validate-allowed-tags'],
 		'docblock-validate-description': rules['docblock-validate-description'],
 		'docblock-validate-params-js': rules['docblock-validate-params-js'],
@@ -91,7 +93,9 @@ export default {
 				...commonRules,
 				'frakto/align-variables': 'error',
 				'frakto/separate-control-keywords': 'error',
-				'frakto/block-comments': 'warn',
+				'frakto/no-commented-code': 'warn',
+				'frakto/no-block-comments': 'warn',
+				'frakto/docblock-require': 'error',
 				'frakto/docblock-validate-allowed-tags': ['error', { language: 'js' }],
 				'frakto/docblock-validate-description': 'error',
 				'frakto/docblock-validate-params-js': 'error',
@@ -107,7 +111,9 @@ export default {
 				...commonRules,
 				'frakto/align-variables': 'error',
 				'frakto/separate-control-keywords': 'error',
-				'frakto/block-comments': 'warn',
+				'frakto/no-commented-code': 'warn',
+				'frakto/no-block-comments': 'warn',
+				'frakto/docblock-require': 'error',
 				'frakto/docblock-validate-allowed-tags': ['error', { language: 'ts' }],
 				'frakto/docblock-validate-description': 'error',
 				'frakto/docblock-validate-params-ts': 'error',

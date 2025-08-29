@@ -97,7 +97,7 @@ export default {
 							node: declarator,
 							loc: declarator.id.loc,
 							message: 'Variable declarations should be aligned at the equals sign.',
-							fix(fixer) {
+							fix: (fixer) => {
 								const spaces = ' '.repeat(Math.max(1, neededSpaces));
 								return fixer.replaceTextRange([idEnd, equalsStart], spaces);
 							}

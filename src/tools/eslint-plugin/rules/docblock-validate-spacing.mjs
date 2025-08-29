@@ -65,8 +65,8 @@ export default {
 			const { docblock, data, loc } = docData;
 
 			// Extract description and tags
-			const description = data[0]?.description?.trim() ?? '';
-			const tags        = data[0]?.tags ?? [];
+			const description = data.description?.trim() ?? '';
+			const tags        = data.tags ?? [];
 
 			// Extract lines
 			const lines         = docblock.value.split('\n');
@@ -168,12 +168,9 @@ export default {
 
 		return {
 			ClassDeclaration: validate,
-			MethodDefinition: validate,
+			ClassExpression: validate,
 			FunctionExpression: validate,
-			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validate,
-			ExportDefaultDeclaration: validate,
-			AssignmentExpression: validate
+			ArrowFunctionExpression: validate
 		};
 	}
 };

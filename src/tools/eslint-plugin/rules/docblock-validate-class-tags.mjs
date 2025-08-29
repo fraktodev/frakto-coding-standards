@@ -73,15 +73,14 @@ export default {
 		const validate = (node) => {
 			const docData = getDocblockData(context, node);
 			if (!docData) return;
-			const { docblock, realNode, data, loc } = docData;
-			if ('class' !== realNode.kind) return;
+			const { docblock, data, loc } = docData;
 
 			// Extract tags and class name
-			const tags      = data[0]?.tags ?? [];
-			const className = realNode.id?.name || '<<anonymous>>';
+			const tags      = data.tags ?? [];
+			const className = node.id?.name || '<<anonymous>>';
 
 			// Check if class is abstract
-			if (isClassAbstract(realNode)) {
+			if (isClassAbstract(node)) {
 				const abstractTags = tags.filter((tag) => 'abstract' === tag.tag);
 
 				// Report missing @abstract tag
@@ -104,10 +103,10 @@ export default {
 			}
 
 			// Check if class extends another class
-			if (realNode.superClass) {
+			if (node.superClass) {
 				// Prepare @extends tag
 				const extendsTags    = tags.filter((tag) => 'extends' === tag.tag);
-				const superClassName = realNode.superClass.name;
+				const superClassName = node.superClass.name;
 
 				// Report missing @extends tag
 				if (!extendsTags.length) {
@@ -147,8 +146,7 @@ export default {
 
 		return {
 			ClassDeclaration: validate,
-			ExportNamedDeclaration: validate,
-			ExportDefaultDeclaration: validate
+			ClassExpression: validate
 		};
 	}
 };

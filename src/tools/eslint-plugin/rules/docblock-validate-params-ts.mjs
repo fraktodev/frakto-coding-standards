@@ -241,13 +241,12 @@ export default {
 		const validate = (node) => {
 			const docData = getDocblockData(context, node);
 			if (!docData) return;
-			const { docblock, realNode, data, loc } = docData;
-			if ('class' === realNode.kind) return;
+			const { docblock, data, loc } = docData;
 
 			// Extract tags and real params
-			const tags       = data[0]?.tags ?? [];
+			const tags       = data.tags ?? [];
 			const paramTags  = tags.filter((tag) => 'param' === tag.tag);
-			const realParams = getNodeParams(realNode);
+			const realParams = getNodeParams(node);
 
 			// Report missing @param tags
 			if (0 === realParams.length && 0 < paramTags.length) {
@@ -400,12 +399,8 @@ export default {
 		};
 
 		return {
-			MethodDefinition: validate,
 			FunctionExpression: validate,
-			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validate,
-			ExportDefaultDeclaration: validate,
-			AssignmentExpression: validate
+			ArrowFunctionExpression: validate
 		};
 	}
 };

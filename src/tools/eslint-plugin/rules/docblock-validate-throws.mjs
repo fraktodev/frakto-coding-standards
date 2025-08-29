@@ -145,15 +145,14 @@ export default {
 		const validate = (node) => {
 			const docData = getDocblockData(context, node);
 			if (!docData) return;
-			const { docblock, realNode, data, loc } = docData;
-			if ('class' === realNode.kind) return;
+			const { docblock, data, loc } = docData;
 
 			// Extract tags
-			const tags       = data[0]?.tags ?? [];
+			const tags       = data.tags ?? [];
 			const throwsTags = tags.filter((tag) => 'throw' === tag.tag || 'throws' === tag.tag);
 
 			// Check if the node has try-catch or throw statements
-			const canThrowErrors = hasTryCatch(realNode) || hasThrow(realNode);
+			const canThrowErrors = hasTryCatch(node) || hasThrow(node);
 
 			// Report missing @throws tag
 			if (canThrowErrors && !throwsTags.length) {
@@ -198,7 +197,7 @@ export default {
 					description,
 					source: [source]
 				} = throwsTag;
-				const occurrence                                                                             = index + 1;
+				const occurrence = index + 1;
 
 				// Report deprecated @throw tag
 				if ('throw' === label) {
@@ -278,12 +277,8 @@ export default {
 		};
 
 		return {
-			MethodDefinition: validate,
 			FunctionExpression: validate,
-			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validate,
-			ExportDefaultDeclaration: validate,
-			AssignmentExpression: validate
+			ArrowFunctionExpression: validate
 		};
 	}
 };

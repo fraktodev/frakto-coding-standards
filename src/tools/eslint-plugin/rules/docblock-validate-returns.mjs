@@ -23,11 +23,10 @@ export default {
 		const validate = (node) => {
 			const docData = getDocblockData(context, node);
 			if (!docData) return;
-			const { docblock, realNode, data, loc } = docData;
-			if ('class' === realNode.kind) return;
+			const { docblock, data, loc } = docData;
 
 			// Extract tags
-			const tags        = data[0]?.tags ?? [];
+			const tags        = data.tags ?? [];
 			const returnsTags = tags.filter((tag) => 'return' === tag.tag || 'returns' === tag.tag);
 
 			// Report missing @returns tag
@@ -120,12 +119,8 @@ export default {
 		};
 
 		return {
-			MethodDefinition: validate,
 			FunctionExpression: validate,
-			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validate,
-			ExportDefaultDeclaration: validate,
-			AssignmentExpression: validate
+			ArrowFunctionExpression: validate
 		};
 	}
 };

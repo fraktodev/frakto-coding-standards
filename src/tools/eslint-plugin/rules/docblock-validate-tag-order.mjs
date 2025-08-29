@@ -26,7 +26,7 @@ export default {
 			const { docblock, data } = docData;
 
 			// Extract tags
-			const tags = data[0]?.tags ?? [];
+			const tags = data.tags ?? [];
 
 			// Early return if no tags are present
 			if (!tags.length) return;
@@ -81,12 +81,9 @@ export default {
 
 		return {
 			ClassDeclaration: validate,
-			MethodDefinition: validate,
+			ClassExpression: validate,
 			FunctionExpression: validate,
-			ArrowFunctionExpression: validate,
-			ExportNamedDeclaration: validate,
-			ExportDefaultDeclaration: validate,
-			AssignmentExpression: validate
+			ArrowFunctionExpression: validate
 		};
 	}
 };

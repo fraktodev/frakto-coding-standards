@@ -3,8 +3,7 @@ export default {
 	meta: {
 		type: 'layout',
 		docs: {
-			description:
-				'Require control flow keywords (else, catch, finally) to be on separate lines with proper indentation',
+			description: 'Require control flow keywords (else, catch, finally) to be on separate lines',
 			category: 'Stylistic Issues',
 			recommended: true
 		},
