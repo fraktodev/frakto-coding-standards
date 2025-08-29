@@ -74,6 +74,7 @@ export default {
 	rules: {
 		'align-variables': rules['align-variables'],
 		'separate-control-keywords': rules['separate-control-keywords'],
+		'prefer-named-functions': rules['prefer-named-functions'],
 		'no-commented-code': rules['no-commented-code'],
 		'no-block-comments': rules['no-block-comments'],
 		'docblock-require': rules['docblock-require'],
@@ -93,6 +94,7 @@ export default {
 				...commonRules,
 				'frakto/align-variables': 'error',
 				'frakto/separate-control-keywords': 'error',
+				'frakto/prefer-named-functions': 'error',
 				'frakto/no-commented-code': 'warn',
 				'frakto/no-block-comments': 'warn',
 				'frakto/docblock-require': 'error',
@@ -111,6 +113,7 @@ export default {
 				...commonRules,
 				'frakto/align-variables': 'error',
 				'frakto/separate-control-keywords': 'error',
+				'frakto/prefer-named-functions': 'error',
 				'frakto/no-commented-code': 'warn',
 				'frakto/no-block-comments': 'warn',
 				'frakto/docblock-require': 'error',
