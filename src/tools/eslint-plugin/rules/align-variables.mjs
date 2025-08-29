@@ -42,6 +42,21 @@ export default {
 				const lineGap = nextNode.loc.start.line - group[group.length - 1].loc.end.line;
 				if (2 < lineGap) break;
 
+				// Check if any declaration is multiline OR not Identifier
+				const hasUnsupportedDeclaration = nextNode.declarations.some((decl) => {
+					if (!decl.init) return false;
+
+					// Check if not simple identifier (destructuring)
+					if ('Identifier' !== decl.id.type) return true;
+
+					// Check if multiline
+					const initStartLine = decl.init.loc.start.line;
+					const initEndLine   = decl.init.loc.end.line;
+					return initStartLine !== initEndLine;
+				});
+
+				if (hasUnsupportedDeclaration) break; // Break sequence
+
 				if (nextNode.declarations.some((decl) => decl.init)) {
 					group.push(nextNode);
 				}
@@ -70,7 +85,14 @@ export default {
 			group.forEach((decl) => {
 				decl.declarations.forEach((declarator) => {
 					if (declarator.init && 'Identifier' === declarator.id.type) {
-						allDeclarators.push(declarator);
+						// Check if init value is multiline
+						const initStartLine = declarator.init.loc.start.line;
+						const initEndLine   = declarator.init.loc.end.line;
+						const isMultiline   = initStartLine !== initEndLine;
+
+						if (!isMultiline) {
+							allDeclarators.push(declarator);
+						}
 					}
 				});
 			});
@@ -81,7 +103,7 @@ export default {
 				maxIdLength = Math.max(maxIdLength, idText.length);
 			});
 
-			allDeclarators.some((declarator) => {
+			allDeclarators.forEach((declarator) => {
 				const idText      = sourceCode.getText(declarator.id);
 				const equalsToken = sourceCode.getTokenAfter(declarator.id);
 

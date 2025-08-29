@@ -67,7 +67,7 @@ export default {
 						column: sourceCode.lines[node.loc.start.line - 1].length
 					}
 				},
-				message: `Missing docblock for this declaration. ${node.type} ${node.parent.type}`
+				message: 'Missing docblock for this declaration.'
 			});
 		};
 

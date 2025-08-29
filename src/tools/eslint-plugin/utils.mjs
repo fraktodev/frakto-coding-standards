@@ -63,6 +63,7 @@ export const getDocblock = (sourceCode, node) => {
 			'ExportDefaultDeclaration',
 			'ExportNamedDeclaration',
 			'MethodDefinition',
+			'NewExpression',
 			'Property',
 			'PropertyDefinition',
 			'ReturnStatement',
